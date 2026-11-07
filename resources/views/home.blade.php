@@ -124,10 +124,8 @@
                             <div class="mt-4">
                                 @if (! $tersedia)
                                     <span class="btn-secondary w-full cursor-not-allowed opacity-50">Tidak Tersedia</span>
-                                @elseguest
-                                    <a href="{{ route('login') }}" class="btn-primary w-full">Masuk untuk Menyewa</a>
                                 @else
-                                    <span class="btn-secondary w-full cursor-not-allowed opacity-70" title="Booking dibuka di tahap berikutnya">Booking Segera Dibuka</span>
+                                    <a href="{{ route('booking.create', ['unit' => $u->id]) }}" class="btn-primary w-full">Sewa Sekarang</a>
                                 @endif
                             </div>
                         </div>

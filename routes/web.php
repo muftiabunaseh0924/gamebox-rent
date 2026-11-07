@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Auth\AdminAuthController;
 use App\Http\Controllers\Auth\CustomerAuthController;
+use App\Http\Controllers\BookingController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
 
@@ -19,7 +21,12 @@ Route::middleware('guest')->group(function () {
 Route::post('/keluar', [CustomerAuthController::class, 'logout'])->middleware('auth')->name('logout');
 
 Route::middleware(['auth', 'role:user'])->group(function () {
-    Route::view('/dashboard', 'dashboard')->name('dashboard');
+    Route::get('/dashboard', DashboardController::class)->name('dashboard');
+
+    Route::get('/booking', [BookingController::class, 'create'])->name('booking.create');
+    Route::get('/booking/slot', [BookingController::class, 'slot'])->name('booking.slot');
+    Route::post('/booking', [BookingController::class, 'store'])->middleware('throttle:10,1')->name('booking.store');
+    Route::get('/pesanan/{booking}', [BookingController::class, 'show'])->name('booking.show');
 });
 
 // ---------- Admin ----------
