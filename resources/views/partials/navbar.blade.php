@@ -1,6 +1,7 @@
 @php
     $pengguna = auth()->user();
     $dasbor = $pengguna?->role === 'admin' ? route('admin.dashboard') : route('dashboard');
+    $tautan = 'rounded-lg px-4 py-2 font-headline text-sm font-semibold tracking-wide transition-colors text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface';
 @endphp
 <header class="fixed inset-x-0 top-0 z-50 border-b border-surface-variant/40 bg-surface-container-lowest/80 backdrop-blur-xl">
     <div class="mx-auto flex h-20 max-w-[1320px] items-center justify-between gap-6 px-4 md:px-8">
@@ -12,12 +13,15 @@
             </span>
         </a>
 
-        <nav class="hidden items-center gap-2 lg:flex">
+        <nav class="hidden items-center gap-1 md:flex">
             <a href="{{ route('home') }}"
                class="rounded-lg px-4 py-2 font-headline text-sm font-semibold tracking-wide transition-colors
                {{ request()->routeIs('home') ? 'bg-primary-container text-on-surface' : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface' }}">
                 Beranda
             </a>
+            <a href="{{ route('home') }}#katalog" class="{{ $tautan }}">Katalog</a>
+            <a href="{{ route('home') }}#harga" class="{{ $tautan }}">Harga</a>
+            <a href="{{ route('home') }}#cara" class="{{ $tautan }}">Cara Sewa</a>
         </nav>
 
         <div class="flex items-center gap-3">

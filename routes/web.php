@@ -2,9 +2,10 @@
 
 use App\Http\Controllers\Auth\AdminAuthController;
 use App\Http\Controllers\Auth\CustomerAuthController;
+use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'home')->name('home');
+Route::get('/', HomeController::class)->name('home');
 
 // ---------- Pelanggan ----------
 Route::middleware('guest')->group(function () {
