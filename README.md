@@ -121,7 +121,6 @@ routes/web.php             Seluruh route
 
 ## Keamanan
 
-- Berkas `.env` tidak ikut repository; kunci Midtrans kelak hanya disimpan di `.env`
 - Password di-hash, session diregenerasi saat login, dan login dibatasi lewat rate limiting
 - Kolom sensitif (peran, status, harga) tidak bisa diisi lewat input pengguna
 - Pelanggan hanya dapat melihat pesanan miliknya sendiri
