@@ -4,7 +4,7 @@ Pemindahan proyek **GameBox Rent** dari Google Apps Script + Google Sheets ke **
 
 Proyek lama (Apps Script, Langkah 1 sampai 6 selesai dan lolos tes) **tetap disimpan sebagai acuan** aturan bisnis, daftar tes, dan desain. Jangan dihapus.
 
-**Posisi sekarang: L1, L2, dan L3 selesai dan lolos tes. Berikutnya L4.**
+**Posisi sekarang: L1 sampai L5 selesai dan lolos tes. Berikutnya L6.**
 
 ---
 
@@ -31,9 +31,9 @@ Proyek lama (Apps Script, Langkah 1 sampai 6 selesai dan lolos tes) **tetap disi
 | L1 | Pasang lingkungan + buat proyek Laravel | **Selesai** (bagian 3) |
 | L2 | Migrasi database + seeder (pengaturan, paket harga, unit, metode bayar, admin) | **Selesai, lolos tes, sudah di-commit** (bagian 4) |
 | L3 | Layout dari Stitch, registrasi/login pelanggan dan admin (terpisah), role + middleware | **Selesai, lolos tes 11 skenario, di-commit** (bagian 10) |
-| **L4** | Beranda + katalog unit | **Berikutnya** (bagian 10.7) |
-| L5 | Booking: jadwal, durasi, bentrok + buffer, transaksi DB + penguncian baris, Ambil Sendiri/Diantar | Belum |
-| L6 | **Pembayaran Midtrans (sandbox)**: Snap, webhook, kode konfirmasi setelah `settlement`, riwayat, detail pesanan | Belum |
+| L4 | Beranda + katalog unit | **Selesai, lolos tes, di-commit** (bagian 10.7) |
+| L5 | Booking: jadwal, durasi, bentrok + buffer, transaksi DB + penguncian baris, Ambil Sendiri/Diantar | **Selesai, lolos semua tes** (bagian 10.8) |
+| **L6** | **Pembayaran Midtrans (sandbox)**: Snap, webhook, kode konfirmasi setelah `settlement`, riwayat, detail pesanan | **Berikutnya** (bagian 10.9) |
 | L7 | Invoice PDF + email (DomPDF + Laravel Mail) | Belum |
 | L8 | Admin: konfirmasi kode, serah terima, tandai selesai, lokasi konsol | Belum |
 | L9 | Pelacakan kurir (berbasis status) | Belum |
@@ -53,11 +53,11 @@ Proyek lama (Apps Script, Langkah 1 sampai 6 selesai dan lolos tes) **tetap disi
 - PATH PHP, Composer, MySQL sudah permanen
 - `php artisan about`: zona waktu **Asia/Jakarta**, locale **id**, database **mysql**
 - Folder sisa `D:\laragon\www\gamebox-rent` sudah tidak ada
-- Git sudah berjalan di branch `master`
+- Git berjalan; branch utama sekarang `main` (sebelumnya `master`)
 
 **Yang sengaja dilewati / belum:**
 - Halaman `/tes` tidak pernah dicoba dan sudah dihapus di L3 (Vite + Tailwind terbukti jalan lewat layout L3).
-- Repository GitHub (private): belum dikonfirmasi dibuat.
+- Repository GitHub sudah dibuat dan di-push (lihat bagian 7)
 
 ---
 
@@ -202,11 +202,15 @@ Riwayat saat ini:
 
 | Commit | Pesan |
 |---|---|
-| (L1) | setup Laravel |
+| `987113a` | `L1: setup Laravel` |
 | `dc40521` | `L2: migrasi dan seeder` |
-| (L3) | `L3: layout, autentikasi, role` |
+| `38890b1` | `L3: layout, autentikasi, role` |
+| (L4) | `L4: beranda dan katalog` |
+| (L5) | `L5: booking` |
 
 Format commit tiap langkah: `Lx: ringkasan`. Sebelum `git add .`, cek `git status` dan pastikan `.env` tidak muncul (sudah ada di `.gitignore` bawaan).
+
+**GitHub:** repository `https://github.com/muftiabunaseh0924/gamebox-rent` (branch `main`, remote `origin`). Email commit sama dengan email akun GitHub agar terhitung di grafik kontribusi. `.env` tidak ikut terkirim (`git ls-files .env` kosong). Setelah tiap langkah selesai: `git add .`, `git commit -m "Lx: ringkasan"`, `git push`.
 
 Jika diminta identitas: `git config --global user.name "Nama Kamu"` dan `git config --global user.email "emailkamu@example.com"`. Disarankan membuat repository **private** di GitHub (cadangan + kerja kelompok).
 
@@ -250,10 +254,13 @@ PATH PHP saat ini: `D:\laragon\bin\php\php-8.3.36-Win32-vs16-x64`.
 | `View [layouts.admin] not found` (atau view lain tidak ditemukan) | Nama berkas salah atau ekstensi bukan `.blade.php` (Windows menyembunyikan ekstensi) | `Get-ChildItem resources\views\layouts`, ganti nama, lalu `php artisan view:clear` |
 | Layar login/dasbor tanpa gaya setelah ganti `app.css` | Vite tidak berjalan atau cache lama | `composer run dev`, `php artisan optimize:clear` |
 | Login ditolak padahal password benar | Role atau status salah, atau salah halaman login | Pelanggan: `/masuk`. Admin: `/admin/masuk`. Cek `SELECT email, role, status FROM users;` |
+| `route:list : The term 'route:list' is not recognized` | Lupa awalan `php artisan` | `php artisan route:list --except-vendor` |
+| `Call to undefined function Booking_rupiah()` | Fungsi tidak ada | Pakai `\App\Models\Booking::rupiah(...)`, lalu `php artisan view:clear` |
+| `Invalid route action: [App\Http\Controllers\HomeController]` | Berkas controller dibuat dengan `make:controller` tetapi isinya belum ditimpa (tanpa `__invoke`) | Timpa isi berkas dengan kode lengkap, simpan, `php artisan optimize:clear` |
 
 ---
 
-## 10. Status L3 (selesai) dan rancangan L4
+## 10. Status L3, L4, L5 (selesai) dan rancangan L6
 
 ### 10.1 Keputusan L3 yang dipakai
 
@@ -321,35 +328,106 @@ PATH PHP saat ini: `D:\laragon\bin\php\php-8.3.36-Win32-vs16-x64`.
 - Error `View [layouts.admin] not found`: berkas ada tetapi **namanya salah** (ekstensi bukan `.blade.php`). Windows menyembunyikan ekstensi; aktifkan *File name extensions* di Explorer, dan cek dengan `Get-ChildItem resources\views\layouts`. Nama yang benar: `app.blade.php`, `auth.blade.php`, `admin.blade.php`.
 - Tes keadaan akun (status `Nonaktif`) harus dibiarkan `Nonaktif` selama dicoba; mengembalikan ke `Aktif` di perintah berikutnya membuat tes tidak terlihat.
 
-### 10.7 Rancangan L4: beranda dan katalog unit (untuk dikonfirmasi di awal L4)
+### 10.7 Status L4 (selesai): beranda dan katalog unit
 
-**Tujuan:** beranda publik dan katalog unit sesuai layar Stitch `katalog_beranda_sewa`, data dari database (bukan data contoh).
+**Keputusan yang dipakai:** foto unit pakai placeholder (upload foto menyusul di L10), katalog menampilkan semua unit, teks hero dan footer dibaca dari tabel `contents`.
 
-**Yang dibutuhkan di awal L4 (kirim outputnya):**
+**Berkas L4:**
+
+| Berkas | Lokasi | Catatan |
+|---|---|---|
+| `Console.php`, `Package.php` | `app/Models/` | Diisi. `Console`: scope `urut()` (PS5 dulu), `fotoUrl()`, `daftarGame()`; `booking_aktif_id` tidak di fillable. `Package`: scope `aktif()`, `hargaRupiah()` |
+| `HomeController.php` | `app/Http/Controllers/` | Controller satu aksi (`__invoke`). Membaca `contents`, `consoles`, `packages`; harga "mulai dari" = paket aktif termurah per jenis |
+| `web.php` | `routes/` | `/` ke `HomeController` (nama `home`) |
+| `navbar.blade.php` | `resources/views/partials/` | Ditambah tautan Katalog, Harga, Cara Sewa (anchor `#katalog`, `#harga`, `#cara`) |
+| `home.blade.php` | `resources/views/` | Hero, katalog + filter PS5/PS4 (JavaScript ringan), harga paket, cara menyewa |
+
+**Format teks di `contents`:** pasangan `Judul::Isi` dipisah `|` (kunci `hero_poin`, `cara_menyewa`, `operasional`); `kelengkapan_standar` dipisah koma. Kunci `catatan_buffer`, `catatan_pengiriman`, `catatan_identitas`, `syarat_ketentuan` berisi placeholder `{{buffer_jam}}` dan `{{denda}}` yang baru dipakai di L5/L6.
+
+**Hasil tes (lolos):**
+- Hero memuat judul, badge, dua poin dari database; "Unit tersedia 5 / 5".
+- 5 kartu unit cocok dengan tabel `consoles` (PS5-01, PS5-02, PS5-03, PS4-01, PS4-02); harga mulai dari PS4 Rp 50.000 dan PS5 Rp 80.000 benar.
+- Status unit dari database tampil benar (Disewa jadi badge kuning + tombol "Tidak Tersedia"); teks hero mengikuti perubahan di `contents`.
+- Tamu melihat "Masuk untuk Menyewa"; pelanggan login melihat "Booking Segera Dibuka"; login admin dan `/dashboard` tetap benar.
+
+**Catatan:** kesalahan umum saat tes: menjalankan beberapa perintah `mysql` ditempel sekaligus dan memakai `KODE` apa adanya (harus diganti kode unit asli, mis. `PS5-03`). Jalankan satu perintah, muat ulang halaman, baru perintah berikutnya.
+
+### 10.8 Status L5 (selesai): booking
+
+**Keputusan yang dipakai:** stik tambahan ikut, setelah booking muncul halaman ringkasan dengan hitung mundur batas bayar, zona waktu bisnis `Asia/Jakarta`.
+
+**Berkas L5:**
+
+| Berkas | Lokasi | Catatan |
+|---|---|---|
+| `Booking.php` | `app/Models/` | Baru (dibuat manual, bukan `make:model`). Tanpa `$fillable` (diisi lewat `forceFill()`); route key `kode_booking`; helper `kedaluwarsa()` dan `rupiah()` |
+| `User.php` | `app/Models/` | Diubah: relasi `bookings()` |
+| `BookingException.php` | `app/Exceptions/` | Baru. Membawa nama field untuk pesan validasi |
+| `BookingService.php` | `app/Services/` | Baru. Seluruh aturan bisnis booking (di bawah) |
+| `StoreBookingRequest.php` | `app/Http/Requests/` | Baru. Validasi input form |
+| `BookingController.php` | `app/Http/Controllers/` | Baru: `create`, `slot` (JSON), `store`, `show` |
+| `DashboardController.php` | `app/Http/Controllers/` | Baru. Mengirim 5 pesanan terbaru ke dasbor |
+| `web.php` | `routes/` | Diubah (tabel route di bawah) |
+| `create.blade.php`, `show.blade.php` | `resources/views/booking/` | Baru: form booking dan ringkasan pesanan |
+| `dashboard.blade.php` | `resources/views/` | Diubah: daftar Pesanan Terbaru |
+| `home.blade.php` | `resources/views/` | Diubah: tombol kartu menjadi "Sewa Sekarang" (`booking.create?unit=ID`) |
+
+**Route L5 (semua `auth` + `role:user`):**
+
+| URL | Nama | Fungsi |
+|---|---|---|
+| `GET /booking` | `booking.create` | Form booking (`?unit=ID` memilih unit) |
+| `GET /booking/slot` | `booking.slot` | JSON ketersediaan jam untuk unit, tanggal, durasi |
+| `POST /booking` | `booking.store` | Membuat booking (throttle 10/menit) |
+| `GET /pesanan/{kode_booking}` | `booking.show` | Ringkasan pesanan (hanya milik sendiri; milik orang lain 404) |
+
+**Aturan di `BookingService` (semua dicek di server, di dalam satu transaksi):**
+- Transaksi dimulai dengan `lockForUpdate()` pada **semua baris `consoles`**, lalu semua pengecekan dibaca ulang setelah kunci. Dua permintaan bersamaan tidak bisa sama-sama lolos ke slot atau stok stik yang sama.
+- Unit harus `Tersedia`; jam mulai harus termasuk `jam_mulai_slot`; jadwal harus di masa depan dan maksimal `maks_hari_ke_depan` (7) hari; tanggal di `blocked_dates` ditolak.
+- Durasi dan harga dari tabel `packages` (aktif, sesuai jenis unit); harga **dihitung ulang di server**: `total_harga = harga_paket + jumlah_stik x harga_stik + biaya_pengiriman`. Kolom `harga_stik` di `bookings` berisi harga **per stik** (salinan dari `settings`).
+- Bentrok: `mulaiBaru < selesaiLama + buffer` dan `selesaiBaru + buffer > mulaiLama`. Booking yang memegang jadwal: `Dibayar`, `Sedang Disewa`, dan `Menunggu Pembayaran` yang `batas_bayar`-nya belum lewat (booking kedaluwarsa otomatis melepas jadwal tanpa perlu scheduler).
+- Stik tambahan dibatasi `stok_stik` dikurangi stik yang terpakai pada jadwal yang tumpang tindih.
+- Maksimal `maks_booking_menunggu` (2) booking `Menunggu Pembayaran` yang belum kedaluwarsa per akun.
+- `Diantar`: hanya bila `pengiriman_aktif`; alamat wajib (min. 10 karakter); biaya dari `biaya_pengiriman`.
+- Kode booking `PS5-XXXXXX` (panjang dari `panjang_kode`, alfabet tanpa I/O/0/1), unik; `batas_bayar` = sekarang + `batas_bayar_menit` (15).
+- Salinan `buffer_jam` dan `denda_per_keterlambatan` disimpan di setiap booking.
+
+**Hasil tes (10 skenario, semua lolos):** route terdaftar; tamu diarahkan ke login lalu kembali ke form dengan unit terpilih; ringkasan harga benar (paket, stik, pengiriman); booking tersimpan dengan status `Menunggu Pembayaran` dan hitung mundur; jam bentrok bertanda (Terisi) dan buffer bekerja; batas 2 booking menunggu; dasbor menampilkan pesanan; booking kedaluwarsa melepas jadwal; admin yang membuka `/booking` dialihkan ke `/admin`.
+
+**Catatan dan kejadian saat L5:**
+- `route:list` bukan perintah PowerShell; harus `php artisan route:list --except-vendor`.
+- Error `Call to undefined function Booking_rupiah()` di `booking/create.blade.php`: fungsi itu tidak ada. Yang benar `\App\Models\Booking::rupiah(...)` (dua tempat: harga stik dan biaya pengiriman). Setelah mengganti: `php artisan view:clear`.
+- `blocked_dates` masih kosong dan nama kolomnya belum dikonfirmasi. `BookingService::tanggalDiblokir()` mencari kolom `tanggal`, `tanggal_blokir`, atau `tgl`, dan melewati pengecekan bila tidak ada. **Kirim `DESCRIBE blocked_dates;` agar dikunci ke nama kolom yang benar** (bisa di awal L6).
+- Data uji booking dihapus dengan `DELETE FROM bookings;` sebelum lanjut.
+
+### 10.9 Rancangan L6: pembayaran Midtrans sandbox (untuk dikonfirmasi di awal L6)
+
+**Tujuan:** booking `Menunggu Pembayaran` bisa dibayar lewat Midtrans Snap (sandbox); setelah pembayaran sukses (`settlement`) booking menjadi `Dibayar`, kode konfirmasi terbit, dan pelanggan melihat riwayat serta detail pesanan.
+
+**Yang dibutuhkan di awal L6 (kirim outputnya):**
 
 ```powershell
-mysql -u root gamebox_rent -e 'DESCRIBE consoles;'
-mysql -u root gamebox_rent -e 'DESCRIBE packages;'
-mysql -u root gamebox_rent -e 'SELECT * FROM packages LIMIT 6;'
-mysql -u root gamebox_rent -e 'SELECT * FROM contents;'
+mysql -u root gamebox_rent -e 'DESCRIBE payments;'
+mysql -u root gamebox_rent -e 'SELECT * FROM payment_methods;'
+mysql -u root gamebox_rent -e 'DESCRIBE blocked_dates;'
 ```
 
-Dengan itu nama kolom tidak ditebak.
+**Yang perlu disiapkan pengguna:** akun **Midtrans sandbox** (dashboard sandbox.midtrans.com) dan **Client Key + Server Key** dari menu Settings, Access Keys. Kunci hanya masuk `.env`, jangan dikirim ke percakapan, jangan di-commit.
 
-**Usulan isi L4:**
-- Model `Console` dan `Package` diisi (relasi, scope, akses harga) menggantikan model kosong dari L2.
-- `HomeController` / `CatalogController`: beranda (hero, ringkasan, daftar unit dan harga paket) memakai tabel `consoles`, `packages`, `settings`, `contents`.
-- Kartu unit: badge jenis (PS4/PS5), kode unit, status (`Tersedia`, `Disewa`, `Perawatan`), harga mulai dari paket termurah, tombol Sewa (mengarah ke login jika tamu; halaman booking dibuat di L5).
-- Filter Semua / PS5 / PS4 (JavaScript ringan di sisi klien).
-- Foto unit: sementara memakai gambar placeholder/ikon; upload foto menyusul bersama `php artisan storage:link` (di L10).
-- Navbar diisi tautan Beranda dan Katalog (layout L3 dipakai ulang).
+**Usulan isi L6:**
+- Paket `midtrans/midtrans-php` (Composer); `config/midtrans.php` membaca `MIDTRANS_SERVER_KEY`, `MIDTRANS_CLIENT_KEY`, `MIDTRANS_IS_PRODUCTION=false` dari `.env`.
+- Model `Payment`; `PaymentService`: membuat transaksi Snap dengan `order_id` unik per percobaan, `gross_amount` = `total_harga` dari server (bukan dari browser), menyimpan `snap_token` di tabel `payments`.
+- Route: `POST /pesanan/{booking}/bayar` (menghasilkan snap token), halaman pesanan memuat `snap.js` sandbox dan membuka popup pembayaran; riwayat `GET /pesanan`.
+- **Webhook** `POST /midtrans/notifikasi`: tanpa CSRF; wajib verifikasi `signature_key` (SHA512 dari `order_id + status_code + gross_amount + ServerKey`); idempoten (notifikasi ganda tidak membuat efek ganda); `settlement` mengubah booking menjadi `Dibayar` dan menerbitkan `kode_konfirmasi` unik; `expire`/`cancel`/`deny` mencatat status pembayaran.
+- Karena webhook dari internet tidak bisa menjangkau komputer lokal, disediakan **tombol "Cek status pembayaran"** yang menanyakan status transaksi langsung ke API Midtrans (bekerja tanpa tunnel), dan opsional memakai ngrok atau Cloudflare Tunnel untuk menguji webhook asli.
+- Detail pesanan menampilkan kode konfirmasi setelah `Dibayar`; tombol "Bayar" hanya aktif selama belum kedaluwarsa.
 
-**Pertanyaan yang dikonfirmasi di awal L4:**
-1. Foto unit: pakai placeholder dulu (usulan) atau sudah ada foto sendiri?
-2. Katalog menampilkan semua 5 unit (usulan) atau digabung per jenis (PS4 / PS5) dengan jumlah ready?
-3. Teks hero dan footer diambil dari tabel `contents` (usulan) atau ditulis langsung di Blade?
+**Pertanyaan yang dikonfirmasi di awal L6:**
+1. Akun Midtrans sandbox dan kuncinya sudah siap (sudah dimasukkan ke `.env` sendiri)?
+2. Webhook: uji dengan tunnel (ngrok/Cloudflare, usulan setelah alur dasar jalan) atau cukup tombol "Cek status" dulu?
+3. Metode pembayaran: biarkan Snap menampilkan semua metode sandbox (usulan) atau dibatasi sesuai tabel `payment_methods`?
 
-**Hasil yang benar di akhir L4:** beranda menampilkan 5 unit dari database dengan status dan harga mulai dari yang benar; filter PS4/PS5 bekerja; tamu dan pelanggan sama-sama bisa membuka beranda; commit `L4: beranda dan katalog`.
+**Hasil yang benar di akhir L6:** pembayaran sandbox sukses mengubah booking menjadi `Dibayar` dan menerbitkan kode konfirmasi; notifikasi ganda atau dengan signature salah tidak mengubah apa pun; booking kedaluwarsa tidak bisa dibayar; commit `L6: pembayaran midtrans`.
 
 ---
 
@@ -415,7 +493,7 @@ Dengan itu nama kolom tidak ditebak.
 - [x] Folder sisa Laragon tidak ada lagi
 - [x] Commit pertama dibuat
 - [ ] Halaman `/tes` (dilewati, dihapus di L3)
-- [ ] Repository GitHub (private) dibuat
+- [x] Repository GitHub dibuat dan di-push (`muftiabunaseh0924/gamebox-rent`, branch `main`)
 
 ### L2
 - [x] Zona waktu `Asia/Jakarta`
@@ -429,14 +507,30 @@ Dengan itu nama kolom tidak ditebak.
 - [x] Layout (`app`, `auth`, `admin`), partial, halaman daftar/masuk/keluar pelanggan, login admin, middleware `role`
 - [x] Route dan view `/tes` dihapus
 - [x] 11 tes lolos (pelanggan tidak bisa membuka admin; admin dan pelanggan tidak bisa masuk lewat login yang salah; throttle; akun nonaktif)
-- [x] Commit `L3: layout, autentikasi, role`
+- [x] Commit `L3: layout, autentikasi, role` (`38890b1`)
 
-### L4 (berikutnya)
-- [ ] Output `DESCRIBE consoles`, `DESCRIBE packages`, `SELECT * FROM packages LIMIT 6`, `SELECT * FROM contents` dikirim
-- [ ] Keputusan: foto unit, tampilan katalog, sumber teks hero
-- [ ] Model `Console` dan `Package` diisi; controller dan route beranda/katalog
-- [ ] Beranda menampilkan 5 unit dari database, status dan harga mulai benar; filter PS4/PS5 jalan
-- [ ] Commit `L4: beranda dan katalog`
+### L4
+- [x] Output `DESCRIBE consoles`, `DESCRIBE packages`, `SELECT * FROM packages LIMIT 6`, `SELECT * FROM contents` dikirim
+- [x] Keputusan: foto placeholder, semua unit, teks hero dari `contents`
+- [x] Model `Console` dan `Package` diisi; `HomeController`, route `/`, navbar, `home.blade.php`
+- [x] Beranda menampilkan 5 unit dari database, status dan harga mulai benar; filter PS4/PS5 jalan
+- [x] Commit `L4: beranda dan katalog`
+
+### L5
+- [x] Keputusan: stik tambahan ikut, halaman ringkasan + hitung mundur, zona waktu Asia/Jakarta
+- [x] Model `Booking`, `BookingService`, `BookingException`, `BookingController`, `DashboardController`, `StoreBookingRequest`, route, form dan ringkasan pesanan
+- [x] Bentrok + buffer ditolak; batas 2 booking menunggu; harga dihitung server; transaksi + `lockForUpdate`
+- [x] 10 tes lolos (jam Terisi, buffer, batas 2 booking, kedaluwarsa, admin dialihkan)
+- [x] Commit `L5: booking`
+- [ ] (kecil) `DESCRIBE blocked_dates` dikirim untuk mengunci pengecekan tanggal libur
+
+### L6 (berikutnya)
+- [ ] Akun Midtrans sandbox dibuat; Client Key + Server Key dimasukkan ke `.env` sendiri
+- [ ] Output `DESCRIBE payments`, `SELECT * FROM payment_methods`, `DESCRIBE blocked_dates` dikirim
+- [ ] Keputusan: webhook (tunnel atau tombol cek status), metode pembayaran
+- [ ] `config/midtrans.php`, model `Payment`, `PaymentService`, route bayar + webhook + riwayat
+- [ ] `settlement` mengubah booking menjadi `Dibayar` dan menerbitkan kode konfirmasi; signature salah dan notifikasi ganda aman
+- [ ] Commit `L6: pembayaran midtrans`
 
 ---
 
@@ -444,8 +538,8 @@ Dengan itu nama kolom tidak ditebak.
 
 1. Selesaikan checklist langkah yang sedang berjalan.
 2. Kirim bukti: output perintah cek atau screenshot halaman.
-3. Tulis **"lanjut L4"** (atau langkah berikutnya).
+3. Tulis **"lanjut L6"** (atau langkah berikutnya).
 
 Jika memulai percakapan baru, lampirkan README ini + `PRD_GameBox_Rent.pdf` + README dan zip proyek Apps Script lama (acuan aturan bisnis dan tes) + `stitch_prd_visual_interface_prototype.zip`, lalu tulis:
 
-> Saya memindahkan proyek GameBox Rent dari Google Apps Script ke Laravel 13.40 (PHP 8.3, Blade + Tailwind + MySQL via Laragon di Windows, pembayaran Midtrans sandbox). L1, L2 (migrasi database + seeder), dan L3 (layout, login pelanggan dan admin terpisah, role + middleware) sudah selesai, lolos tes, dan di-commit. Baca README_Laravel.md. Lanjutkan dari **L4: beranda dan katalog unit (desain Stitch `katalog_beranda_sewa`)**, step by step, beri kode dan README per langkah (jangan zip), jalankan satu perintah per baris, dan sebutkan file mana yang dibuat baru atau diubah.
+> Saya memindahkan proyek GameBox Rent dari Google Apps Script ke Laravel 13.40 (PHP 8.3, Blade + Tailwind + MySQL via Laragon di Windows, pembayaran Midtrans sandbox). L1, L2 (migrasi database + seeder), L3 (layout, login pelanggan dan admin terpisah, role + middleware), L4 (beranda dan katalog unit), dan L5 (booking: jadwal, bentrok + buffer, harga dihitung server) sudah selesai, lolos tes, dan di-commit. Baca README_Laravel.md. Lanjutkan dari **L6: pembayaran Midtrans sandbox (desain Stitch `pembayaran_simulasi` dan `detail_pesanan_kode_serah_terima`)**, step by step, beri kode dan README per langkah (jangan zip), jalankan satu perintah per baris, dan sebutkan file mana yang dibuat baru atau diubah.
