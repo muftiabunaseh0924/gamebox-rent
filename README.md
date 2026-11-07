@@ -1,4 +1,30 @@
-# GameBox Rent
+<p align="center">
+  <a href="https://laravel.com" target="_blank">
+    <img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo">
+  </a>
+</p>
+
+<h1 align="center">GameBox Rent</h1>
+
+<p align="center">
+  Sistem rental <b>PlayStation 4 &amp; 5</b> berbasis web: booking jadwal, cek bentrok, dan pembayaran online.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Laravel-13-FF2D20?style=for-the-badge&logo=laravel&logoColor=white" alt="Laravel 13">
+  <img src="https://img.shields.io/badge/PHP-8.3-777BB4?style=for-the-badge&logo=php&logoColor=white" alt="PHP 8.3">
+  <img src="https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL">
+  <img src="https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS v4">
+  <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Pembayaran-Midtrans_Sandbox-0A4DA2?style=flat-square" alt="Midtrans Sandbox">
+  <img src="https://img.shields.io/badge/Status-L5_selesai,_L6_berikutnya-2F6BFF?style=flat-square" alt="Status pengembangan">
+  <img src="https://img.shields.io/badge/Platform-Windows_%2B_Laragon-5DE6FF?style=flat-square" alt="Windows dan Laragon">
+</p>
+
+---
 
 Sistem rental **PlayStation 4 & 5** berbasis web. Pelanggan memilih unit, jadwal, dan durasi sewa; sistem memastikan jadwal tidak bentrok, menghitung harga di server, dan (dalam pengembangan) memproses pembayaran online lewat Midtrans. Dibangun dengan **Laravel 13**, **Tailwind CSS**, dan **MySQL**.
 
@@ -121,3 +147,9 @@ routes/web.php             Seluruh route
 ## Penulis
 
 Mufti Abu Naseh ([@muftiabunaseh0924](https://github.com/muftiabunaseh0924)).
+
+---
+
+<p align="center">
+  Dibangun di atas <a href="https://laravel.com">Laravel</a>, framework open-source berlisensi MIT.
+</p>
