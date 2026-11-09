@@ -4,7 +4,7 @@ Pemindahan proyek **GameBox Rent** dari Google Apps Script + Google Sheets ke **
 
 Proyek lama (Apps Script, Langkah 1 sampai 6 selesai dan lolos tes) **tetap disimpan sebagai acuan** aturan bisnis, daftar tes, dan desain. Jangan dihapus.
 
-**Posisi sekarang: L1 sampai L5 selesai dan lolos tes. Berikutnya L6.**
+**Posisi sekarang: L1 sampai L6 selesai dan lolos tes. Berikutnya L7.**
 
 ---
 
@@ -33,8 +33,8 @@ Proyek lama (Apps Script, Langkah 1 sampai 6 selesai dan lolos tes) **tetap disi
 | L3 | Layout dari Stitch, registrasi/login pelanggan dan admin (terpisah), role + middleware | **Selesai, lolos tes 11 skenario, di-commit** (bagian 10) |
 | L4 | Beranda + katalog unit | **Selesai, lolos tes, di-commit** (bagian 10.7) |
 | L5 | Booking: jadwal, durasi, bentrok + buffer, transaksi DB + penguncian baris, Ambil Sendiri/Diantar | **Selesai, lolos semua tes** (bagian 10.8) |
-| **L6** | **Pembayaran Midtrans (sandbox)**: Snap, webhook, kode konfirmasi setelah `settlement`, riwayat, detail pesanan | **Berikutnya** (bagian 10.9) |
-| L7 | Invoice PDF + email (DomPDF + Laravel Mail) | Belum |
+| L6 | **Pembayaran Midtrans (sandbox)**: Snap, webhook, kode konfirmasi setelah `settlement`, riwayat, detail pesanan | **Selesai, lolos semua tes** (bagian 10.9) |
+| **L7** | Invoice PDF + email (DomPDF + Laravel Mail) | **Berikutnya** (bagian 10.10) |
 | L8 | Admin: konfirmasi kode, serah terima, tandai selesai, lokasi konsol | Belum |
 | L9 | Pelacakan kurir (berbasis status) | Belum |
 | L10 | Admin: dashboard, pesanan, jadwal, perangkat, harga, pengaturan, pelanggan, log | Belum |
@@ -206,7 +206,8 @@ Riwayat saat ini:
 | `dc40521` | `L2: migrasi dan seeder` |
 | `38890b1` | `L3: layout, autentikasi, role` |
 | (L4) | `L4: beranda dan katalog` |
-| (L5) | `L5: booking` |
+| `865004b` | `L5: booking` |
+| (L6) | `L6: pasang paket Midtrans dan konfigurasi sandbox`, lalu `L6: pembayaran midtrans` |
 
 Format commit tiap langkah: `Lx: ringkasan`. Sebelum `git add .`, cek `git status` dan pastikan `.env` tidak muncul (sudah ada di `.gitignore` bawaan).
 
@@ -260,7 +261,7 @@ PATH PHP saat ini: `D:\laragon\bin\php\php-8.3.36-Win32-vs16-x64`.
 
 ---
 
-## 10. Status L3, L4, L5 (selesai) dan rancangan L6
+## 10. Status L3 sampai L6 (selesai) dan rancangan L7
 
 ### 10.1 Keputusan L3 yang dipakai
 
@@ -400,34 +401,87 @@ PATH PHP saat ini: `D:\laragon\bin\php\php-8.3.36-Win32-vs16-x64`.
 - `blocked_dates` masih kosong dan nama kolomnya belum dikonfirmasi. `BookingService::tanggalDiblokir()` mencari kolom `tanggal`, `tanggal_blokir`, atau `tgl`, dan melewati pengecekan bila tidak ada. **Kirim `DESCRIBE blocked_dates;` agar dikunci ke nama kolom yang benar** (bisa di awal L6).
 - Data uji booking dihapus dengan `DELETE FROM bookings;` sebelum lanjut.
 
-### 10.9 Rancangan L6: pembayaran Midtrans sandbox (untuk dikonfirmasi di awal L6)
+### 10.9 Status L6 (selesai): pembayaran Midtrans sandbox
 
-**Tujuan:** booking `Menunggu Pembayaran` bisa dibayar lewat Midtrans Snap (sandbox); setelah pembayaran sukses (`settlement`) booking menjadi `Dibayar`, kode konfirmasi terbit, dan pelanggan melihat riwayat serta detail pesanan.
+**Keputusan yang dipakai:** Midtrans **Sandbox** (tanpa uang sungguhan), tipe akun **Pedagang** (Merchant); status pembayaran dicek lewat tombol "Cek Status Pembayaran" (webhook tersedia tetapi baru bisa diuji dengan alamat publik); popup Snap menampilkan semua metode sandbox (tabel `payment_methods` belum dipakai).
 
-**Yang dibutuhkan di awal L6 (kirim outputnya):**
+**Setup (selesai sebelum kode):**
+- Paket `midtrans/midtrans-php` 2.6.2 (`composer require`), `config/midtrans.php` (`server_key`, `client_key`, `is_production`, `snap_js_url` sandbox/production).
+- `.env`: `MIDTRANS_SERVER_KEY`, `MIDTRANS_CLIENT_KEY`, `MIDTRANS_IS_PRODUCTION=false`. `.env.example` memuat nama variabel dengan nilai kosong. `.env` tidak ikut Git (`git check-ignore -v .env` menunjukkan aturan di `.gitignore`).
+- Kunci sandbox berawalan `SB-Mid-server-` dan `SB-Mid-client-`. Server Key dibuat di dasbor Sandbox (Settings, Access Keys, General Credentials, Generate server key): Snap Checkout Write, Core API Read, Expire dan Cancel transaction Write, tanpa kedaluwarsa. Abaikan "BI Snap Credentials".
+- Uji kunci tanpa membocorkannya: `php artisan tinker --execute="echo substr(...)"` mencetak hanya 7 huruf pertama (`SB-Mid-|SB-Mid-`); uji token Snap berhasil.
+
+**Berkas L6:**
+
+| Berkas | Lokasi | Catatan |
+|---|---|---|
+| `Payment.php` | `app/Models/` | Baru (manual, tanpa `$fillable`; `payload` di-cast array) |
+| `Booking.php` | `app/Models/` | Diubah: relasi `payments()`, `statusTampil()`, `kelasStatus()` |
+| `PaymentService.php` | `app/Services/` | Baru. `buatTransaksi()`, `sinkronkan()`, `terapkan()`, `tandaTanganValid()` |
+| `PaymentController.php` | `app/Http/Controllers/` | Baru: `bayar`, `cekStatus`, `webhook` |
+| `BookingController.php` | `app/Http/Controllers/` | Diubah: ditambah `index` (riwayat), `show` memuat pembayaran |
+| `web.php` | `routes/` | Diubah (tabel di bawah) |
+| `show.blade.php`, `index.blade.php` | `resources/views/booking/` | `show`: popup Snap, hitung mundur, tombol cek status, kode konfirmasi, riwayat pembayaran. `index`: daftar semua pesanan (baru) |
+| `dashboard.blade.php` | `resources/views/` | Diubah: tombol "Semua Pesanan" |
+| `midtrans.php` | `config/` | Baru |
+
+**Route baru:**
+
+| URL | Nama | Akses |
+|---|---|---|
+| `GET /pesanan` | `booking.index` | `auth` + `role:user` |
+| `POST /pesanan/{kode_booking}/bayar` | `booking.bayar` | `auth` + `role:user` (throttle 10/menit); mengembalikan token Snap (JSON) |
+| `POST /pesanan/{kode_booking}/cek-status` | `booking.cek-status` | `auth` + `role:user` (throttle 20/menit) |
+| `POST /midtrans/notifikasi` | `midtrans.notifikasi` | Publik, tanpa CSRF, dijaga tanda tangan |
+
+**Aturan di `PaymentService`:**
+- **Jumlah bayar diambil dari database** (`total_harga`), bukan dari browser; rincian item (paket, stik, pengiriman) dikirim ke Midtrans.
+- `order_id` unik per percobaan (`KODE-BOOKING-waktu+2 huruf`); percobaan Pending yang masih punya token dipakai ulang.
+- Masa berlaku transaksi Midtrans mengikuti `batas_bayar` booking.
+- Status Midtrans dipetakan: `settlement` atau `capture`+`accept` menjadi `Berhasil`; `pending` menjadi `Pending`; `expire` menjadi `Kedaluwarsa`; `cancel` menjadi `Dibatalkan`; `deny`/`failure` menjadi `Gagal`.
+- Sumber kebenaran adalah API status Midtrans (`Transaction::status`), baik dari tombol cek status maupun webhook; webhook memverifikasi `signature_key` (SHA512 dari `order_id + status_code + gross_amount + ServerKey`).
+- Idempoten: pembayaran yang sudah `Berhasil` tidak diproses ulang. Nominal Midtrans yang berbeda dari database diabaikan.
+- `Berhasil` mengubah booking menjadi `Dibayar` dan menerbitkan `kode_konfirmasi` (6 karakter, alfabet tanpa I/O/0/1, unik). Bila pembayaran masuk setelah batas bayar dan jadwal sudah dipakai orang lain, booking tidak diubah dan dicatat di log untuk ditangani admin.
+- Transaksi database mengunci booking dulu, lalu payment (urutan konsisten).
+
+**Hasil tes (12 skenario, semua lolos):** cek status sebelum bayar; popup Snap dengan total yang sama; pembayaran kartu uji berhasil; booking menjadi `Dibayar` dengan kode konfirmasi; data `payments` dan `bookings` benar di database; Virtual Account lewat simulator; jadwal yang sudah dibayar tampil Terisi di form booking; `/pesanan` menampilkan riwayat; admin yang membuka `/pesanan` dialihkan ke `/admin`.
+
+**Tentang tes terakhir (admin membuka `/pesanan`):** bukan lewat menu. Menu "Pesanan" di sidebar admin memang belum aktif (bertanda Segera) sampai L10. Cara mengujinya: login di `/admin/masuk`, lalu **ketik langsung** `http://localhost:8000/pesanan` di address bar; hasil yang benar adalah dialihkan ke `/admin`. Penyebabnya middleware `role:user` pada route pelanggan (`EnsureRole`) yang mengalihkan admin ke dasbor admin.
+
+**Kartu uji Sandbox:** `4811 1111 1111 1114`, CVV `123`, kedaluwarsa bulan dan tahun apa saja di masa depan, OTP `112233`. Virtual Account dan QRIS diselesaikan lewat simulator pembayaran di docs.midtrans.com (Testing Payment on Sandbox).
+
+**Catatan dan kejadian saat L6 (agar tidak terulang):**
+- Dasbor Midtrans membuka lingkungan **Production** secara bawaan. Selalu cek kotak **Environment** di kiri atas bertuliskan **Sandbox** sebelum membuat kunci; kunci Production tidak berawalan `SB-Mid-`.
+- WiFi rumah memblokir `repo.packagist.org` (timeout `curl error 28`, `Test-NetConnection` gagal), sehingga `composer require` gagal. Solusi: **hotspot HP** saat memasang paket Composer. Paket yang sudah terpasang (folder `vendor`) tidak butuh internet; panggilan ke Midtrans butuh internet ke `app.sandbox.midtrans.com`. Paket baru berikutnya (DomPDF di L7, Excel di L11) juga butuh hotspot.
+- Jangan mengetik penugasan variabel kunci di tinker (`Config::$serverKey = config(...)`) karena tinker mencetak nilainya. Pakai perintah tinker yang membungkus panggilan dalam fungsi atau hanya mencetak 7 huruf pertama. Kunci yang pernah terlihat (di layar atau percakapan) sebaiknya dibuat ulang di dasbor lalu yang lama dihapus.
+- `git commit` tanpa `git add .` sebelumnya memberi `no changes added to commit`; urutan yang benar: `git add .`, `git commit`, `git pull --rebase origin main`, `git push`.
+- Webhook asli tidak bisa menerima notifikasi selama aplikasi di `localhost`. Pengujiannya butuh tunnel (ngrok atau Cloudflare Tunnel) dan pengisian Payment Notification URL di dasbor Sandbox; untuk sekarang tombol "Cek Status Pembayaran" menggantikannya.
+
+### 10.10 Rancangan L7: invoice PDF dan email (untuk dikonfirmasi di awal L7)
+
+**Tujuan:** setelah pembayaran berhasil, pelanggan mendapat invoice PDF (bisa diunduh dari halaman pesanan) dan email konfirmasi pembayaran.
+
+**Yang dibutuhkan di awal L7 (kirim outputnya):**
 
 ```powershell
-mysql -u root gamebox_rent -e 'DESCRIBE payments;'
-mysql -u root gamebox_rent -e 'SELECT * FROM payment_methods;'
-mysql -u root gamebox_rent -e 'DESCRIBE blocked_dates;'
+mysql -u root gamebox_rent -e 'DESCRIBE email_templates;'
+mysql -u root gamebox_rent -e 'SELECT * FROM email_templates;'
+mysql -u root gamebox_rent -e 'SELECT `key`, value FROM settings WHERE `key` IN ("prefix_invoice","nama_situs","kontak","alamat","logo_url");'
 ```
 
-**Yang perlu disiapkan pengguna:** akun **Midtrans sandbox** (dashboard sandbox.midtrans.com) dan **Client Key + Server Key** dari menu Settings, Access Keys. Kunci hanya masuk `.env`, jangan dikirim ke percakapan, jangan di-commit.
+**Usulan isi L7:**
+- Paket `barryvdh/laravel-dompdf` (butuh hotspot untuk `composer require`).
+- Nomor invoice dibentuk dari `prefix_invoice` (`INV`) dan data booking tanpa kolom baru; invoice dibuat saat diminta (tidak disimpan sebagai berkas).
+- Route unduh invoice milik pelanggan sendiri, tombol "Unduh Invoice" di halaman pesanan yang sudah `Dibayar`; isi invoice: data situs dari `settings`, pelanggan, unit, jadwal, rincian biaya, metode dan waktu bayar, kode konfirmasi.
+- Email konfirmasi pembayaran memakai templat dari tabel `email_templates` (dengan placeholder), lampiran invoice PDF, dikirim sekali ketika booking berubah menjadi `Dibayar` (aman terhadap pemanggilan berulang).
+- Email diuji lewat `MAIL_MAILER=log` (email dan lampiran tercatat di `storage/logs`) atau Mailtrap/Mailpit/Gmail App Password bila ingin tampil di kotak masuk.
 
-**Usulan isi L6:**
-- Paket `midtrans/midtrans-php` (Composer); `config/midtrans.php` membaca `MIDTRANS_SERVER_KEY`, `MIDTRANS_CLIENT_KEY`, `MIDTRANS_IS_PRODUCTION=false` dari `.env`.
-- Model `Payment`; `PaymentService`: membuat transaksi Snap dengan `order_id` unik per percobaan, `gross_amount` = `total_harga` dari server (bukan dari browser), menyimpan `snap_token` di tabel `payments`.
-- Route: `POST /pesanan/{booking}/bayar` (menghasilkan snap token), halaman pesanan memuat `snap.js` sandbox dan membuka popup pembayaran; riwayat `GET /pesanan`.
-- **Webhook** `POST /midtrans/notifikasi`: tanpa CSRF; wajib verifikasi `signature_key` (SHA512 dari `order_id + status_code + gross_amount + ServerKey`); idempoten (notifikasi ganda tidak membuat efek ganda); `settlement` mengubah booking menjadi `Dibayar` dan menerbitkan `kode_konfirmasi` unik; `expire`/`cancel`/`deny` mencatat status pembayaran.
-- Karena webhook dari internet tidak bisa menjangkau komputer lokal, disediakan **tombol "Cek status pembayaran"** yang menanyakan status transaksi langsung ke API Midtrans (bekerja tanpa tunnel), dan opsional memakai ngrok atau Cloudflare Tunnel untuk menguji webhook asli.
-- Detail pesanan menampilkan kode konfirmasi setelah `Dibayar`; tombol "Bayar" hanya aktif selama belum kedaluwarsa.
+**Pertanyaan yang dikonfirmasi di awal L7:**
+1. Pengujian email: tetap `log` (usulan) atau Mailtrap/Gmail?
+2. Invoice dibuat saat diminta (usulan) atau disimpan sebagai berkas di `storage`?
+3. Pengiriman email lewat antrean (queue) atau langsung (usulan: langsung dulu)?
 
-**Pertanyaan yang dikonfirmasi di awal L6:**
-1. Akun Midtrans sandbox dan kuncinya sudah siap (sudah dimasukkan ke `.env` sendiri)?
-2. Webhook: uji dengan tunnel (ngrok/Cloudflare, usulan setelah alur dasar jalan) atau cukup tombol "Cek status" dulu?
-3. Metode pembayaran: biarkan Snap menampilkan semua metode sandbox (usulan) atau dibatasi sesuai tabel `payment_methods`?
-
-**Hasil yang benar di akhir L6:** pembayaran sandbox sukses mengubah booking menjadi `Dibayar` dan menerbitkan kode konfirmasi; notifikasi ganda atau dengan signature salah tidak mengubah apa pun; booking kedaluwarsa tidak bisa dibayar; commit `L6: pembayaran midtrans`.
+**Hasil yang benar di akhir L7:** invoice PDF terunduh dengan data yang benar; hanya pemilik pesanan (atau admin) yang bisa mengunduhnya; email konfirmasi tercatat atau terkirim sekali per pembayaran; commit `L7: invoice dan email`.
 
 ---
 
@@ -524,13 +578,22 @@ mysql -u root gamebox_rent -e 'DESCRIBE blocked_dates;'
 - [x] Commit `L5: booking`
 - [ ] (kecil) `DESCRIBE blocked_dates` dikirim untuk mengunci pengecekan tanggal libur
 
-### L6 (berikutnya)
-- [ ] Akun Midtrans sandbox dibuat; Client Key + Server Key dimasukkan ke `.env` sendiri
-- [ ] Output `DESCRIBE payments`, `SELECT * FROM payment_methods`, `DESCRIBE blocked_dates` dikirim
-- [ ] Keputusan: webhook (tunnel atau tombol cek status), metode pembayaran
-- [ ] `config/midtrans.php`, model `Payment`, `PaymentService`, route bayar + webhook + riwayat
-- [ ] `settlement` mengubah booking menjadi `Dibayar` dan menerbitkan kode konfirmasi; signature salah dan notifikasi ganda aman
-- [ ] Commit `L6: pembayaran midtrans`
+### L6
+- [x] Akun Midtrans Pedagang + Sandbox, Server Key dan Client Key di `.env` sendiri
+- [x] Paket `midtrans/midtrans-php`, `config/midtrans.php`, `.env.example` (nilai kosong)
+- [x] Output `DESCRIBE payments`, `payment_methods`, `blocked_dates` dikirim (`blocked_dates` memakai kolom `tanggal`, sesuai `BookingService`)
+- [x] Model `Payment`, `PaymentService`, `PaymentController`, route bayar + cek status + webhook, popup Snap, riwayat `/pesanan`
+- [x] Pembayaran sandbox sukses mengubah booking menjadi `Dibayar` dan menerbitkan kode konfirmasi
+- [x] 12 tes lolos
+- [x] Commit `L6: pasang paket Midtrans dan konfigurasi sandbox`, lalu `L6: pembayaran midtrans`
+- [ ] (kecil, nanti) uji webhook asli dengan tunnel dan isi Payment Notification URL di dasbor Sandbox
+
+### L7 (berikutnya)
+- [ ] Output `DESCRIBE email_templates`, `SELECT * FROM email_templates`, dan pengaturan situs/invoice dikirim
+- [ ] Keputusan: pengujian email, invoice dibuat saat diminta atau disimpan, email langsung atau antrean
+- [ ] Hotspot HP dinyalakan untuk `composer require barryvdh/laravel-dompdf`
+- [ ] Invoice PDF (unduh dari halaman pesanan), email konfirmasi dengan lampiran, terkirim sekali per pembayaran
+- [ ] Commit `L7: invoice dan email`
 
 ---
 
@@ -538,8 +601,8 @@ mysql -u root gamebox_rent -e 'DESCRIBE blocked_dates;'
 
 1. Selesaikan checklist langkah yang sedang berjalan.
 2. Kirim bukti: output perintah cek atau screenshot halaman.
-3. Tulis **"lanjut L6"** (atau langkah berikutnya).
+3. Tulis **"lanjut L7"** (atau langkah berikutnya).
 
 Jika memulai percakapan baru, lampirkan README ini + `PRD_GameBox_Rent.pdf` + README dan zip proyek Apps Script lama (acuan aturan bisnis dan tes) + `stitch_prd_visual_interface_prototype.zip`, lalu tulis:
 
-> Saya memindahkan proyek GameBox Rent dari Google Apps Script ke Laravel 13.40 (PHP 8.3, Blade + Tailwind + MySQL via Laragon di Windows, pembayaran Midtrans sandbox). L1, L2 (migrasi database + seeder), L3 (layout, login pelanggan dan admin terpisah, role + middleware), L4 (beranda dan katalog unit), dan L5 (booking: jadwal, bentrok + buffer, harga dihitung server) sudah selesai, lolos tes, dan di-commit. Baca README_Laravel.md. Lanjutkan dari **L6: pembayaran Midtrans sandbox (desain Stitch `pembayaran_simulasi` dan `detail_pesanan_kode_serah_terima`)**, step by step, beri kode dan README per langkah (jangan zip), jalankan satu perintah per baris, dan sebutkan file mana yang dibuat baru atau diubah.
+> Saya memindahkan proyek GameBox Rent dari Google Apps Script ke Laravel 13.40 (PHP 8.3, Blade + Tailwind + MySQL via Laragon di Windows, pembayaran Midtrans sandbox). L1, L2 (migrasi database + seeder), L3 (layout, login pelanggan dan admin terpisah, role + middleware), L4 (beranda dan katalog unit), L5 (booking: jadwal, bentrok + buffer, harga dihitung server), dan L6 (pembayaran Midtrans sandbox: popup Snap, cek status, kode konfirmasi, riwayat pesanan) sudah selesai, lolos tes, dan di-commit. Baca README_Laravel.md. Lanjutkan dari **L7: invoice PDF dan email konfirmasi (DomPDF + Laravel Mail)**, step by step, beri kode dan README per langkah (jangan zip), jalankan satu perintah per baris, dan sebutkan file mana yang dibuat baru atau diubah.
