@@ -24,7 +24,10 @@
 
 <div class="mt-10 flex items-center justify-between">
     <h3 class="font-headline text-2xl font-bold">Pesanan Terbaru</h3>
-    <a href="{{ route('booking.create') }}" class="btn-primary !py-2">Booking Baru</a>
+        <div class="flex flex-wrap gap-3">
+        <a href="{{ route('booking.index') }}" class="btn-secondary !py-2">Semua Pesanan</a>
+        <a href="{{ route('booking.create') }}" class="btn-primary !py-2">Booking Baru</a>
+    </div>
 </div>
 
 <div class="mt-4 space-y-3">

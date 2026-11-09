@@ -17,6 +17,17 @@ use Illuminate\View\View;
 
 class BookingController extends Controller
 {
+    public function index(Request $request): View
+    {
+        $pesanan = $request->user()
+            ->bookings()
+            ->with('console')
+            ->latest()
+            ->paginate(10);
+
+        return view('booking.index', ['pesanan' => $pesanan]);
+    }
+
     public function create(Request $request, BookingService $service): View
     {
         $pengaturan = $service->pengaturan();
@@ -82,6 +93,6 @@ class BookingController extends Controller
     {
         abort_unless($booking->user_id === $request->user()->id, 404);
 
-        return view('booking.show', ['booking' => $booking->load('console')]);
+        return view('booking.show', ['booking' => $booking->load(['console', 'payments'])]);
     }
 }
