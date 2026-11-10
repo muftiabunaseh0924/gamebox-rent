@@ -20,7 +20,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Pembayaran-Midtrans_Sandbox-0A4DA2?style=flat-square" alt="Midtrans Sandbox">
-  <img src="https://img.shields.io/badge/Status-L6_selesai,_L7_berikutnya-2F6BFF?style=flat-square" alt="Status pengembangan">
+  <img src="https://img.shields.io/badge/Status-L7_selesai,_L8_berikutnya-2F6BFF?style=flat-square" alt="Status pengembangan">
   <img src="https://img.shields.io/badge/Platform-Windows_%2B_Laragon-5DE6FF?style=flat-square" alt="Windows dan Laragon">
 </p>
 
@@ -44,11 +44,12 @@ Sistem rental **PlayStation 4 & 5** berbasis web. Pelanggan memilih unit, jadwal
 - Pencegahan dobel booking pada slot yang sama (transaksi database + penguncian baris)
 - Ringkasan pesanan dengan hitung mundur batas bayar, dasbor pelanggan, dan halaman riwayat pesanan
 - Pembayaran online lewat Midtrans Snap (mode sandbox): popup pembayaran, cek status pembayaran, dan kode konfirmasi serah terima yang terbit setelah pembayaran sukses
+- Invoice PDF yang bisa diunduh dari halaman pesanan, dan email konfirmasi pembayaran (dengan lampiran invoice) yang terkirim sekali per pembayaran
 
 **Dalam pengembangan**
 
 - Webhook Midtrans untuk notifikasi pembayaran otomatis (butuh alamat publik; di lokal memakai tombol cek status)
-- Invoice PDF dan notifikasi email
+- Notifikasi email lanjutan (pengingat mulai dan selesai sewa)
 - Panel admin: konfirmasi kode serah terima, jadwal, perangkat, harga, pengaturan, pelanggan
 - Laporan keuangan dengan ekspor PDF dan Excel
 - Pelacakan pengantaran, serta pembatalan otomatis dan pengingat lewat scheduler
@@ -110,7 +111,8 @@ app/
   Http/Middleware/         EnsureRole (pembatas akses pelanggan/admin)
   Http/Requests/           Validasi form booking
   Models/                  User, Console, Package, Booking, Payment
-  Services/                BookingService (aturan booking), PaymentService (Midtrans)
+  Services/                BookingService, PaymentService (Midtrans), InvoiceService (PDF), NotifikasiService + EmailTemplateService (email)
+  Mail/                    Email pembayaran berhasil (lampiran invoice)
 database/
   migrations/              Skema database
   seeders/                 Pengaturan, paket harga, unit, metode bayar, akun admin
@@ -139,8 +141,8 @@ routes/web.php             Seluruh route
 | L4 | Beranda dan katalog unit | Selesai |
 | L5 | Booking (jadwal, bentrok + buffer, harga server) | Selesai |
 | L6 | Pembayaran Midtrans sandbox | Selesai |
-| L7 | Invoice PDF dan email | Berikutnya |
-| L8 | Admin: konfirmasi kode dan serah terima | Direncanakan |
+| L7 | Invoice PDF dan email | Selesai |
+| L8 | Admin: konfirmasi kode dan serah terima | Berikutnya |
 | L9 | Pelacakan pengantaran | Direncanakan |
 | L10 | Admin: dasbor, pesanan, jadwal, perangkat, pengaturan | Direncanakan |
 | L11 | Laporan keuangan dan ekspor | Direncanakan |

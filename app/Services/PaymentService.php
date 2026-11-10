@@ -168,8 +168,10 @@ class PaymentService
                 'waktu_bayar' => $baru === 'Berhasil' ? now() : $payment->waktu_bayar,
             ])->save();
 
-            if ($baru === 'Berhasil') {
-                $this->tandaiDibayar($booking);
+            if ($baru === 'Berhasil' && $this->tandaiDibayar($booking)) {
+                $idBooking = $booking->id;
+                // Email dikirim setelah transaksi database selesai, dan hanya sekali.
+                DB::afterCommit(fn () => app(NotifikasiService::class)->pembayaranBerhasil($idBooking));
             }
 
             return $payment;
@@ -184,10 +186,10 @@ class PaymentService
         return hash_equals($asli, (string) ($data['signature_key'] ?? ''));
     }
 
-    private function tandaiDibayar(Booking $booking): void
+    private function tandaiDibayar(Booking $booking): bool
     {
         if ($booking->status_booking !== 'Menunggu Pembayaran') {
-            return;
+            return false;
         }
 
         // Pembayaran masuk setelah jadwal sempat dilepas dan sudah diambil orang lain.
@@ -196,14 +198,17 @@ class PaymentService
         )) {
             Log::warning('Pembayaran berhasil tetapi jadwal sudah terisi. Perlu penanganan admin.', ['booking' => $booking->kode_booking]);
 
-            return;
+            return false;
         }
 
         $booking->forceFill([
             'status_booking' => 'Dibayar',
             'kode_konfirmasi' => $this->kodeKonfirmasi(),
         ])->save();
+
+        return true;
     }
+
 
     private function kodeKonfirmasi(): string
     {

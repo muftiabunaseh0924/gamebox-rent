@@ -63,6 +63,12 @@
                 <span class="font-headline text-2xl font-bold text-secondary">{{ $rp($booking->total_harga) }}</span>
             </div>
 
+            @if ($lunas && $sudahBayar)
+                <a href="{{ route('booking.invoice', $booking) }}" class="btn-secondary w-full">
+                    <span class="material-symbols-outlined text-[20px]">download</span> Unduh Invoice (PDF)
+                </a>
+            @endif
+
             @if ($bisaBayar)
                 <div class="rounded-lg bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
                     Selesaikan pembayaran dalam

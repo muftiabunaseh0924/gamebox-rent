@@ -4,7 +4,7 @@ Pemindahan proyek **GameBox Rent** dari Google Apps Script + Google Sheets ke **
 
 Proyek lama (Apps Script, Langkah 1 sampai 6 selesai dan lolos tes) **tetap disimpan sebagai acuan** aturan bisnis, daftar tes, dan desain. Jangan dihapus.
 
-**Posisi sekarang: L1 sampai L6 selesai dan lolos tes. Berikutnya L7.**
+**Posisi sekarang: L1 sampai L7 selesai dan lolos tes. Berikutnya L8.**
 
 ---
 
@@ -34,8 +34,8 @@ Proyek lama (Apps Script, Langkah 1 sampai 6 selesai dan lolos tes) **tetap disi
 | L4 | Beranda + katalog unit | **Selesai, lolos tes, di-commit** (bagian 10.7) |
 | L5 | Booking: jadwal, durasi, bentrok + buffer, transaksi DB + penguncian baris, Ambil Sendiri/Diantar | **Selesai, lolos semua tes** (bagian 10.8) |
 | L6 | **Pembayaran Midtrans (sandbox)**: Snap, webhook, kode konfirmasi setelah `settlement`, riwayat, detail pesanan | **Selesai, lolos semua tes** (bagian 10.9) |
-| **L7** | Invoice PDF + email (DomPDF + Laravel Mail) | **Berikutnya** (bagian 10.10) |
-| L8 | Admin: konfirmasi kode, serah terima, tandai selesai, lokasi konsol | Belum |
+| L7 | Invoice PDF + email (DomPDF + Laravel Mail) | **Selesai, lolos semua tes** (bagian 10.10) |
+| **L8** | Admin: konfirmasi kode, serah terima, tandai selesai, lokasi konsol | **Berikutnya** (bagian 10.11) |
 | L9 | Pelacakan kurir (berbasis status) | Belum |
 | L10 | Admin: dashboard, pesanan, jadwal, perangkat, harga, pengaturan, pelanggan, log | Belum |
 | L11 | Laporan keuangan + ekspor PDF dan Excel | Belum |
@@ -208,6 +208,7 @@ Riwayat saat ini:
 | (L4) | `L4: beranda dan katalog` |
 | `865004b` | `L5: booking` |
 | (L6) | `L6: pasang paket Midtrans dan konfigurasi sandbox`, lalu `L6: pembayaran midtrans` |
+| (L7) | `L7: invoice dan email` |
 
 Format commit tiap langkah: `Lx: ringkasan`. Sebelum `git add .`, cek `git status` dan pastikan `.env` tidak muncul (sudah ada di `.gitignore` bawaan).
 
@@ -258,10 +259,13 @@ PATH PHP saat ini: `D:\laragon\bin\php\php-8.3.36-Win32-vs16-x64`.
 | `route:list : The term 'route:list' is not recognized` | Lupa awalan `php artisan` | `php artisan route:list --except-vendor` |
 | `Call to undefined function Booking_rupiah()` | Fungsi tidak ada | Pakai `\App\Models\Booking::rupiah(...)`, lalu `php artisan view:clear` |
 | `Invalid route action: [App\Http\Controllers\HomeController]` | Berkas controller dibuat dengan `make:controller` tetapi isinya belum ditimpa (tanpa `__invoke`) | Timpa isi berkas dengan kode lengkap, simpan, `php artisan optimize:clear` |
+| `SQLSTATE[HY000] [2002] No connection could be made ... 3306` (log membengkak) | MySQL belum menyala | Laragon, **Start All**; bersihkan `Clear-Content storage\logs\laravel.log` |
+| `Unknown column 'prefix_invoice'` pada `mysql -e` | Tanda kutip ganda di dalam argumen PowerShell dihapus | Kutip ganda di luar, kutip tunggal di dalam: `mysql -u root gamebox_rent -e "SELECT ... WHERE settings.key IN ('a','b');"` |
+| `composer require` timeout (`curl error 28`) ke `repo.packagist.org` | WiFi memblokir Packagist | Pakai hotspot HP, cek `Test-NetConnection repo.packagist.org -Port 443` |
 
 ---
 
-## 10. Status L3 sampai L6 (selesai) dan rancangan L7
+## 10. Status L3 sampai L7 (selesai) dan rancangan L8
 
 ### 10.1 Keputusan L3 yang dipakai
 
@@ -457,31 +461,64 @@ PATH PHP saat ini: `D:\laragon\bin\php\php-8.3.36-Win32-vs16-x64`.
 - `git commit` tanpa `git add .` sebelumnya memberi `no changes added to commit`; urutan yang benar: `git add .`, `git commit`, `git pull --rebase origin main`, `git push`.
 - Webhook asli tidak bisa menerima notifikasi selama aplikasi di `localhost`. Pengujiannya butuh tunnel (ngrok atau Cloudflare Tunnel) dan pengisian Payment Notification URL di dasbor Sandbox; untuk sekarang tombol "Cek Status Pembayaran" menggantikannya.
 
-### 10.10 Rancangan L7: invoice PDF dan email (untuk dikonfirmasi di awal L7)
+### 10.10 Status L7 (selesai): invoice PDF dan email
 
-**Tujuan:** setelah pembayaran berhasil, pelanggan mendapat invoice PDF (bisa diunduh dari halaman pesanan) dan email konfirmasi pembayaran.
+**Keputusan yang dipakai:** pengujian email lewat `MAIL_MAILER=log` (email dan lampiran tercatat di `storage/logs/laravel.log`, tanpa akun email); invoice dibuat saat diminta (tidak disimpan sebagai berkas, tabel `invoices` tidak dipakai); email dikirim langsung tanpa antrean.
 
-**Yang dibutuhkan di awal L7 (kirim outputnya):**
+**Setup:** paket `barryvdh/laravel-dompdf` (`composer require`, butuh hotspot HP bila WiFi memblokir Packagist). Migrasi baru menambah kolom `bookings.email_pembayaran_at` (penanda email sudah terkirim).
+
+**Berkas L7:**
+
+| Berkas | Lokasi | Catatan |
+|---|---|---|
+| `*_tambah_email_pembayaran_ke_bookings.php` | `database/migrations/` | Baru: kolom `email_pembayaran_at` |
+| `EmailTemplateService.php` | `app/Services/` | Baru. Mengisi placeholder `{{...}}` dari tabel `email_templates` (kolom `jenis_email`, `subjek`, `isi`); ada teks cadangan bila baris hilang |
+| `InvoiceService.php` | `app/Services/` | Baru. Nomor invoice `INV-YYYYMMDD-KODE` (awalan dari `settings.prefix_invoice`, tanggal dari waktu bayar), pembuatan PDF, aturan "invoice hanya untuk booking yang sudah dibayar" |
+| `NotifikasiService.php` | `app/Services/` | Baru. `pembayaranBerhasil()` mengklaim `email_pembayaran_at` secara atomik, sehingga email terkirim **sekali** per booking; kegagalan email tidak membatalkan pembayaran dan klaim dilepas agar bisa dicoba lagi |
+| `PembayaranBerhasilMail.php` | `app/Mail/` | Baru. Email HTML + lampiran invoice PDF |
+| `InvoiceController.php` | `app/Http/Controllers/` | Baru. Unduh invoice (hanya milik sendiri, hanya bila sudah dibayar) |
+| `KirimEmailPembayaran.php` | `app/Console/Commands/` | Baru: `php artisan email:kirim-pembayaran KODE [--paksa]` untuk booking yang dibayar sebelum L7 atau untuk uji ulang |
+| `PaymentService.php` | `app/Services/` | Diubah: `tandaiDibayar()` mengembalikan `bool`; email dikirim lewat `DB::afterCommit()` hanya ketika status benar-benar berubah menjadi `Dibayar` |
+| `pdf.blade.php` | `resources/views/invoice/` | Baru: tampilan invoice A4 (identitas situs, pelanggan, rincian, tanda LUNAS, kode konfirmasi) |
+| `pembayaran-berhasil.blade.php` | `resources/views/emails/` | Baru |
+| `show.blade.php` | `resources/views/booking/` | Diubah: tombol "Unduh Invoice (PDF)" |
+| `web.php` | `routes/` | Diubah: `GET /pesanan/{kode_booking}/invoice` (nama `booking.invoice`, `auth` + `role:user`) |
+
+**Placeholder email yang didukung:** `nama`, `kode`, `kode_booking`, `unit`, `jadwal`, `waktu_mulai`, `waktu_selesai`, `batas_bayar`, `total`, `denda`, `alasan`.
+
+**Hasil tes (semua lolos):** tombol Unduh Invoice muncul hanya pada pesanan yang sudah dibayar; isi PDF sesuai; invoice booking yang belum dibayar menjadi 404; email muncul di log dengan subjek berisi kode konfirmasi dan lampiran `Invoice-INV-YYYYMMDD-KODE.pdf` (`application/pdf`); email hanya satu walau status dicek tiga kali; `email_pembayaran_at` terisi; kirim manual untuk booking lama berhasil; admin yang membuka alamat invoice dialihkan ke `/admin`.
+
+**Catatan dan kejadian saat L7:**
+- Booking yang dibayar **sebelum** kode L7 terpasang punya `email_pembayaran_at` kosong dan tidak memicu email otomatis; kirim manual dengan `php artisan email:kirim-pembayaran KODE`.
+- `laravel.log` sempat membengkak (sekitar 10 MB) karena `SQLSTATE[HY000] [2002] No connection could be made... 3306` berulang saat Laragon/MySQL belum menyala. Nyalakan **Start All** di Laragon dulu; bersihkan dengan `Clear-Content storage\logs\laravel.log`.
+- Perintah PowerShell yang memuat tanda kutip ganda di dalam `mysql -e '...'` gagal (`Unknown column`); gunakan kutip ganda di luar dan kutip tunggal di dalam, dan tulis `settings.key` untuk kolom `key`.
+- Edit parsial pada berkas besar (mis. `PaymentService.php`, `show.blade.php`) sering terlewat; setelah mengedit, cek dengan `Select-String` atau tempel isi berkas untuk diperiksa.
+
+### 10.11 Rancangan L8: admin, konfirmasi kode dan serah terima (untuk dikonfirmasi di awal L8)
+
+**Tujuan:** admin memasukkan kode konfirmasi pelanggan, melihat detail pesanan, menyerahkan unit (booking menjadi `Sedang Disewa`), lalu menandai selesai saat unit kembali (booking menjadi `Selesai`, denda dihitung, unit kembali `Tersedia`). Referensi desain Stitch: `konfirmasi_kode_serah_terima` dan `jadwal_lokasi_konsol`.
+
+**Yang dibutuhkan di awal L8 (kirim outputnya):**
 
 ```powershell
-mysql -u root gamebox_rent -e 'DESCRIBE email_templates;'
-mysql -u root gamebox_rent -e 'SELECT * FROM email_templates;'
-mysql -u root gamebox_rent -e 'SELECT `key`, value FROM settings WHERE `key` IN ("prefix_invoice","nama_situs","kontak","alamat","logo_url");'
+mysql -u root gamebox_rent -e 'DESCRIBE activity_logs;'
+mysql -u root gamebox_rent -e 'DESCRIBE console_movements;'
+mysql -u root gamebox_rent -e 'SELECT kode_unit, status, lokasi_saat_ini, booking_aktif_id FROM consoles;'
 ```
 
-**Usulan isi L7:**
-- Paket `barryvdh/laravel-dompdf` (butuh hotspot untuk `composer require`).
-- Nomor invoice dibentuk dari `prefix_invoice` (`INV`) dan data booking tanpa kolom baru; invoice dibuat saat diminta (tidak disimpan sebagai berkas).
-- Route unduh invoice milik pelanggan sendiri, tombol "Unduh Invoice" di halaman pesanan yang sudah `Dibayar`; isi invoice: data situs dari `settings`, pelanggan, unit, jadwal, rincian biaya, metode dan waktu bayar, kode konfirmasi.
-- Email konfirmasi pembayaran memakai templat dari tabel `email_templates` (dengan placeholder), lampiran invoice PDF, dikirim sekali ketika booking berubah menjadi `Dibayar` (aman terhadap pemanggilan berulang).
-- Email diuji lewat `MAIL_MAILER=log` (email dan lampiran tercatat di `storage/logs`) atau Mailtrap/Mailpit/Gmail App Password bila ingin tampil di kotak masuk.
+**Usulan isi L8:**
+- Menu sidebar admin diaktifkan: Konfirmasi Kode dan Jadwal & Lokasi Konsol (menu lain tetap "Segera" sampai L10).
+- **Konfirmasi Kode:** kolom input kode, validasi di server (booking `Dibayar`, kode belum dipakai, waktu masuk jendela pengambilan), kartu detail pelanggan, unit, jadwal, dan metode serah; tombol **Serahkan Unit** (dalam satu transaksi): booking menjadi `Sedang Disewa`, `kode_dipakai=1`, `waktu_serah_terima`, `admin_konfirmasi_id` terisi; unit menjadi `Disewa` dengan `booking_aktif_id` dan `lokasi_saat_ini`; dicatat di `activity_logs` dan `console_movements`.
+- **Jadwal & Lokasi Konsol:** ringkasan armada (Ready, Disewa, Terlambat, Perawatan), kartu per unit (pemegang, batas kembali, lokasi tercatat, booking lanjutan), tombol **Tandai Selesai** yang hanya aktif sesuai aturan.
+- **Tandai Selesai:** isi `waktu_kembali`, `catatan_kondisi`, hitung `denda` dari keterlambatan, booking `Selesai`, unit `Tersedia` dengan `lokasi_saat_ini` "Di tempat sewa", `booking_aktif_id` kosong; email `terima_kasih` opsional.
+- Semua aksi admin dijaga `auth` + `role:admin` dan dicatat siapa yang melakukannya.
 
-**Pertanyaan yang dikonfirmasi di awal L7:**
-1. Pengujian email: tetap `log` (usulan) atau Mailtrap/Gmail?
-2. Invoice dibuat saat diminta (usulan) atau disimpan sebagai berkas di `storage`?
-3. Pengiriman email lewat antrean (queue) atau langsung (usulan: langsung dulu)?
+**Pertanyaan yang dikonfirmasi di awal L8:**
+1. Denda: dihitung per jam keterlambatan (usulan, jam dibulatkan ke atas, kelipatan `denda_keterlambatan`) atau satu kali per keterlambatan?
+2. Jendela pengambilan: kode hanya berlaku dari berapa lama sebelum jadwal mulai sampai `toleransi_ambil_menit` (30 menit) sesudah mulai? (usulan: boleh dari 1 jam sebelum mulai sampai 30 menit sesudah)
+3. Email `terima_kasih` dikirim saat Tandai Selesai (usulan) atau ditunda?
 
-**Hasil yang benar di akhir L7:** invoice PDF terunduh dengan data yang benar; hanya pemilik pesanan (atau admin) yang bisa mengunduhnya; email konfirmasi tercatat atau terkirim sekali per pembayaran; commit `L7: invoice dan email`.
+**Hasil yang benar di akhir L8:** kode yang valid menampilkan detail dan bisa diserahkan sekali saja (kode kedua kali, kode salah, atau booking belum dibayar ditolak dengan pesan jelas); status booking dan unit berubah konsisten; Tandai Selesai menghitung denda yang benar; semua aksi tercatat di log; commit `L8: admin serah terima`.
 
 ---
 
@@ -588,12 +625,21 @@ mysql -u root gamebox_rent -e 'SELECT `key`, value FROM settings WHERE `key` IN 
 - [x] Commit `L6: pasang paket Midtrans dan konfigurasi sandbox`, lalu `L6: pembayaran midtrans`
 - [ ] (kecil, nanti) uji webhook asli dengan tunnel dan isi Payment Notification URL di dasbor Sandbox
 
-### L7 (berikutnya)
-- [ ] Output `DESCRIBE email_templates`, `SELECT * FROM email_templates`, dan pengaturan situs/invoice dikirim
-- [ ] Keputusan: pengujian email, invoice dibuat saat diminta atau disimpan, email langsung atau antrean
-- [ ] Hotspot HP dinyalakan untuk `composer require barryvdh/laravel-dompdf`
-- [ ] Invoice PDF (unduh dari halaman pesanan), email konfirmasi dengan lampiran, terkirim sekali per pembayaran
-- [ ] Commit `L7: invoice dan email`
+### L7
+- [x] Output `DESCRIBE email_templates` dan `SELECT * FROM email_templates` dikirim
+- [x] Keputusan: email lewat `log`, invoice dibuat saat diminta, email langsung
+- [x] Paket `barryvdh/laravel-dompdf` dipasang (hotspot HP)
+- [x] Migrasi `email_pembayaran_at`; `EmailTemplateService`, `InvoiceService`, `NotifikasiService`, `PembayaranBerhasilMail`, `InvoiceController`, perintah `email:kirim-pembayaran`, tampilan invoice dan email
+- [x] Invoice PDF terunduh dari halaman pesanan; email dengan lampiran tercatat di log, hanya sekali per pembayaran
+- [x] Tes lolos (termasuk kirim manual untuk booking lama)
+- [x] Commit `L7: invoice dan email`
+
+### L8 (berikutnya)
+- [ ] Output `DESCRIBE activity_logs`, `DESCRIBE console_movements`, status unit di `consoles` dikirim
+- [ ] Keputusan: denda per jam atau sekali, jendela pengambilan kode, email terima kasih
+- [ ] Menu admin Konfirmasi Kode dan Jadwal & Lokasi Konsol aktif
+- [ ] Serah terima (`Sedang Disewa`) dan Tandai Selesai (`Selesai`, denda, unit `Tersedia`) dalam transaksi, tercatat di log
+- [ ] Commit `L8: admin serah terima`
 
 ---
 
@@ -601,8 +647,8 @@ mysql -u root gamebox_rent -e 'SELECT `key`, value FROM settings WHERE `key` IN 
 
 1. Selesaikan checklist langkah yang sedang berjalan.
 2. Kirim bukti: output perintah cek atau screenshot halaman.
-3. Tulis **"lanjut L7"** (atau langkah berikutnya).
+3. Tulis **"lanjut L8"** (atau langkah berikutnya).
 
 Jika memulai percakapan baru, lampirkan README ini + `PRD_GameBox_Rent.pdf` + README dan zip proyek Apps Script lama (acuan aturan bisnis dan tes) + `stitch_prd_visual_interface_prototype.zip`, lalu tulis:
 
-> Saya memindahkan proyek GameBox Rent dari Google Apps Script ke Laravel 13.40 (PHP 8.3, Blade + Tailwind + MySQL via Laragon di Windows, pembayaran Midtrans sandbox). L1, L2 (migrasi database + seeder), L3 (layout, login pelanggan dan admin terpisah, role + middleware), L4 (beranda dan katalog unit), L5 (booking: jadwal, bentrok + buffer, harga dihitung server), dan L6 (pembayaran Midtrans sandbox: popup Snap, cek status, kode konfirmasi, riwayat pesanan) sudah selesai, lolos tes, dan di-commit. Baca README_Laravel.md. Lanjutkan dari **L7: invoice PDF dan email konfirmasi (DomPDF + Laravel Mail)**, step by step, beri kode dan README per langkah (jangan zip), jalankan satu perintah per baris, dan sebutkan file mana yang dibuat baru atau diubah.
+> Saya memindahkan proyek GameBox Rent dari Google Apps Script ke Laravel 13.40 (PHP 8.3, Blade + Tailwind + MySQL via Laragon di Windows, pembayaran Midtrans sandbox). L1, L2 (migrasi database + seeder), L3 (layout, login pelanggan dan admin terpisah, role + middleware), L4 (beranda dan katalog unit), L5 (booking: jadwal, bentrok + buffer, harga dihitung server), dan L6 (pembayaran Midtrans sandbox: popup Snap, cek status, kode konfirmasi, riwayat pesanan) dan L7 (invoice PDF dan email konfirmasi pembayaran) sudah selesai, lolos tes, dan di-commit. Baca README_Laravel.md. Lanjutkan dari **L8: admin konfirmasi kode, serah terima, tandai selesai, dan lokasi konsol (desain Stitch `konfirmasi_kode_serah_terima` dan `jadwal_lokasi_konsol`)**, step by step, beri kode dan README per langkah (jangan zip), jalankan satu perintah per baris, dan sebutkan file mana yang dibuat baru atau diubah.
