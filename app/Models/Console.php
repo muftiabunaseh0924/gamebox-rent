@@ -4,16 +4,28 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Console extends Model
 {
     protected $table = 'consoles';
 
-    // booking_aktif_id sengaja tidak di fillable (diatur sistem saat booking).
+    // booking_aktif_id sengaja tidak di fillable (diatur sistem saat serah terima).
     protected $fillable = [
         'kode_unit', 'jenis', 'nama_tampil', 'tag', 'foto',
         'deskripsi', 'game', 'status', 'lokasi_saat_ini',
     ];
+
+    public function bookingAktif(): BelongsTo
+    {
+        return $this->belongsTo(Booking::class, 'booking_aktif_id');
+    }
+
+    public function bookings(): HasMany
+    {
+        return $this->hasMany(Booking::class);
+    }
 
     /** PS5 dulu, lalu PS4; di dalam jenis urut kode unit. */
     public function scopeUrut(Builder $query): Builder

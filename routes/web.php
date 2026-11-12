@@ -1,14 +1,16 @@
 <?php
 
+use App\Http\Controllers\Admin\FleetController;
+use App\Http\Controllers\Admin\HandoverController;
 use App\Http\Controllers\Auth\AdminAuthController;
 use App\Http\Controllers\Auth\CustomerAuthController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\InvoiceController;
 
 Route::get('/', HomeController::class)->name('home');
 
@@ -34,7 +36,7 @@ Route::middleware(['auth', 'role:user'])->group(function () {
     Route::get('/booking', [BookingController::class, 'create'])->name('booking.create');
     Route::get('/booking/slot', [BookingController::class, 'slot'])->name('booking.slot');
     Route::post('/booking', [BookingController::class, 'store'])->middleware('throttle:10,1')->name('booking.store');
-    Route::get('/pesanan/{booking}/invoice', InvoiceController::class)->name('booking.invoice');
+
     Route::get('/pesanan', [BookingController::class, 'index'])->name('booking.index');
     Route::get('/pesanan/{booking}', [BookingController::class, 'show'])->name('booking.show');
     Route::get('/pesanan/{booking}/invoice', InvoiceController::class)->name('booking.invoice');
@@ -52,5 +54,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware(['auth', 'role:admin'])->group(function () {
         Route::view('/', 'admin.dashboard')->name('dashboard');
         Route::post('/keluar', [AdminAuthController::class, 'logout'])->name('logout');
+
+        // L8: serah terima dan armada
+        Route::get('/konfirmasi', [HandoverController::class, 'index'])->name('konfirmasi');
+        Route::post('/konfirmasi', [HandoverController::class, 'cek'])->middleware('throttle:30,1')->name('konfirmasi.cek');
+        Route::post('/konfirmasi/serahkan', [HandoverController::class, 'serahkan'])->middleware('throttle:30,1')->name('konfirmasi.serahkan');
+
+        Route::get('/armada', [FleetController::class, 'index'])->name('armada');
+        Route::post('/armada/{booking}/selesai', [FleetController::class, 'selesai'])->name('armada.selesai');
     });
 });

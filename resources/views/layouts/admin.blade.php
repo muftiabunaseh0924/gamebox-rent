@@ -13,13 +13,24 @@
             </span>
         </div>
 
+        @php
+            $menu = [
+                ['admin.dashboard', 'dashboard', 'Dasbor'],
+                ['admin.konfirmasi*', 'pin', 'Konfirmasi Kode'],
+                ['admin.armada*', 'videogame_asset', 'Jadwal & Lokasi'],
+            ];
+            $menuNanti = [['receipt_long', 'Pesanan'], ['payments', 'Laporan']];
+            $rute = ['admin.dashboard' => 'admin.dashboard', 'admin.konfirmasi*' => 'admin.konfirmasi', 'admin.armada*' => 'admin.armada'];
+        @endphp
         <nav class="flex-1 space-y-1 p-4">
-            <a href="{{ route('admin.dashboard') }}"
-               class="flex items-center gap-3 rounded-lg px-4 py-3 font-headline text-sm font-semibold
-               {{ request()->routeIs('admin.dashboard') ? 'bg-primary-container text-on-surface' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
-                <span class="material-symbols-outlined text-[20px]">dashboard</span> Dasbor
-            </a>
-            @foreach ([['receipt_long', 'Pesanan'], ['videogame_asset', 'Perangkat'], ['payments', 'Laporan']] as [$ikon, $label])
+            @foreach ($menu as [$pola, $ikon, $label])
+                <a href="{{ route($rute[$pola]) }}"
+                   class="flex items-center gap-3 rounded-lg px-4 py-3 font-headline text-sm font-semibold
+                   {{ request()->routeIs($pola) ? 'bg-primary-container text-on-surface' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
+                    <span class="material-symbols-outlined text-[20px]">{{ $ikon }}</span> {{ $label }}
+                </a>
+            @endforeach
+            @foreach ($menuNanti as [$ikon, $label])
                 <span class="flex cursor-not-allowed items-center justify-between rounded-lg px-4 py-3 font-headline text-sm font-semibold text-outline/70">
                     <span class="flex items-center gap-3"><span class="material-symbols-outlined text-[20px]">{{ $ikon }}</span> {{ $label }}</span>
                     <span class="rounded-full bg-surface-container-high px-2 py-0.5 text-[10px] uppercase tracking-wider">Segera</span>
@@ -39,6 +50,10 @@
         <header class="flex h-20 items-center justify-between border-b border-surface-variant/40 bg-surface-container-lowest/80 px-4 backdrop-blur-xl md:px-8">
             <h1 class="font-headline text-xl font-bold">@yield('heading', 'Dasbor')</h1>
             <div class="flex items-center gap-3">
+                <nav class="flex gap-2 md:hidden">
+                    <a href="{{ route('admin.konfirmasi') }}" class="btn-secondary !px-3 !py-2" aria-label="Konfirmasi Kode"><span class="material-symbols-outlined text-[18px]">pin</span></a>
+                    <a href="{{ route('admin.armada') }}" class="btn-secondary !px-3 !py-2" aria-label="Jadwal dan Lokasi"><span class="material-symbols-outlined text-[18px]">videogame_asset</span></a>
+                </nav>
                 <span class="hidden text-sm text-on-surface-variant sm:inline">{{ auth()->user()->name }}</span>
                 <form method="POST" action="{{ route('admin.logout') }}" class="md:hidden">
                     @csrf
