@@ -20,7 +20,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Pembayaran-Midtrans_Sandbox-0A4DA2?style=flat-square" alt="Midtrans Sandbox">
-  <img src="https://img.shields.io/badge/Status-L7_selesai,_L8_berikutnya-2F6BFF?style=flat-square" alt="Status pengembangan">
+  <img src="https://img.shields.io/badge/Status-L8_selesai,_L9_berikutnya-2F6BFF?style=flat-square" alt="Status pengembangan">
   <img src="https://img.shields.io/badge/Platform-Windows_%2B_Laragon-5DE6FF?style=flat-square" alt="Windows dan Laragon">
 </p>
 
@@ -45,12 +45,14 @@ Sistem rental **PlayStation 4 & 5** berbasis web. Pelanggan memilih unit, jadwal
 - Ringkasan pesanan dengan hitung mundur batas bayar, dasbor pelanggan, dan halaman riwayat pesanan
 - Pembayaran online lewat Midtrans Snap (mode sandbox): popup pembayaran, cek status pembayaran, dan kode konfirmasi serah terima yang terbit setelah pembayaran sukses
 - Invoice PDF yang bisa diunduh dari halaman pesanan, dan email konfirmasi pembayaran (dengan lampiran invoice) yang terkirim sekali per pembayaran
+- Panel admin: verifikasi kode konfirmasi dan serah terima unit (sekali per kode, dengan jendela waktu pengambilan), pantauan armada dan lokasi konsol, serta penandaan selesai dengan perhitungan denda keterlambatan
+- Log aktivitas admin dan riwayat perpindahan unit
 
 **Dalam pengembangan**
 
 - Webhook Midtrans untuk notifikasi pembayaran otomatis (butuh alamat publik; di lokal memakai tombol cek status)
 - Notifikasi email lanjutan (pengingat mulai dan selesai sewa)
-- Panel admin: konfirmasi kode serah terima, jadwal, perangkat, harga, pengaturan, pelanggan
+- Panel admin lanjutan: dasbor KPI, manajemen pesanan, perangkat, harga, pengaturan, pelanggan
 - Laporan keuangan dengan ekspor PDF dan Excel
 - Pelacakan pengantaran, serta pembatalan otomatis dan pengingat lewat scheduler
 
@@ -111,7 +113,8 @@ app/
   Http/Middleware/         EnsureRole (pembatas akses pelanggan/admin)
   Http/Requests/           Validasi form booking
   Models/                  User, Console, Package, Booking, Payment
-  Services/                BookingService, PaymentService (Midtrans), InvoiceService (PDF), NotifikasiService + EmailTemplateService (email)
+  Http/Controllers/Admin/  Konfirmasi kode (serah terima) dan armada
+  Services/                BookingService, PaymentService (Midtrans), InvoiceService (PDF), HandoverService (serah terima, denda), NotifikasiService + EmailTemplateService (email)
   Mail/                    Email pembayaran berhasil (lampiran invoice)
 database/
   migrations/              Skema database
@@ -142,8 +145,8 @@ routes/web.php             Seluruh route
 | L5 | Booking (jadwal, bentrok + buffer, harga server) | Selesai |
 | L6 | Pembayaran Midtrans sandbox | Selesai |
 | L7 | Invoice PDF dan email | Selesai |
-| L8 | Admin: konfirmasi kode dan serah terima | Berikutnya |
-| L9 | Pelacakan pengantaran | Direncanakan |
+| L8 | Admin: konfirmasi kode dan serah terima | Selesai |
+| L9 | Pelacakan pengantaran | Berikutnya |
 | L10 | Admin: dasbor, pesanan, jadwal, perangkat, pengaturan | Direncanakan |
 | L11 | Laporan keuangan dan ekspor | Direncanakan |
 | L12 | Scheduler (batal otomatis, pengingat) | Direncanakan |

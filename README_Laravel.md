@@ -4,7 +4,7 @@ Pemindahan proyek **GameBox Rent** dari Google Apps Script + Google Sheets ke **
 
 Proyek lama (Apps Script, Langkah 1 sampai 6 selesai dan lolos tes) **tetap disimpan sebagai acuan** aturan bisnis, daftar tes, dan desain. Jangan dihapus.
 
-**Posisi sekarang: L1 sampai L7 selesai dan lolos tes. Berikutnya L8.**
+**Posisi sekarang: L1 sampai L8 selesai dan lolos tes. Berikutnya L9.**
 
 ---
 
@@ -35,8 +35,8 @@ Proyek lama (Apps Script, Langkah 1 sampai 6 selesai dan lolos tes) **tetap disi
 | L5 | Booking: jadwal, durasi, bentrok + buffer, transaksi DB + penguncian baris, Ambil Sendiri/Diantar | **Selesai, lolos semua tes** (bagian 10.8) |
 | L6 | **Pembayaran Midtrans (sandbox)**: Snap, webhook, kode konfirmasi setelah `settlement`, riwayat, detail pesanan | **Selesai, lolos semua tes** (bagian 10.9) |
 | L7 | Invoice PDF + email (DomPDF + Laravel Mail) | **Selesai, lolos semua tes** (bagian 10.10) |
-| **L8** | Admin: konfirmasi kode, serah terima, tandai selesai, lokasi konsol | **Berikutnya** (bagian 10.11) |
-| L9 | Pelacakan kurir (berbasis status) | Belum |
+| L8 | Admin: konfirmasi kode, serah terima, tandai selesai, lokasi konsol | **Selesai, lolos semua tes** (bagian 10.11) |
+| **L9** | Pelacakan kurir (berbasis status) | **Berikutnya** (bagian 10.12) |
 | L10 | Admin: dashboard, pesanan, jadwal, perangkat, harga, pengaturan, pelanggan, log | Belum |
 | L11 | Laporan keuangan + ekspor PDF dan Excel | Belum |
 | L12 | Scheduler (batal otomatis, pengingat email) | Belum |
@@ -208,7 +208,8 @@ Riwayat saat ini:
 | (L4) | `L4: beranda dan katalog` |
 | `865004b` | `L5: booking` |
 | (L6) | `L6: pasang paket Midtrans dan konfigurasi sandbox`, lalu `L6: pembayaran midtrans` |
-| (L7) | `L7: invoice dan email` |
+| `b29a3b7` | `L7: invoice dan email` |
+| (L8) | `L8: admin serah terima` |
 
 Format commit tiap langkah: `Lx: ringkasan`. Sebelum `git add .`, cek `git status` dan pastikan `.env` tidak muncul (sudah ada di `.gitignore` bawaan).
 
@@ -265,7 +266,7 @@ PATH PHP saat ini: `D:\laragon\bin\php\php-8.3.36-Win32-vs16-x64`.
 
 ---
 
-## 10. Status L3 sampai L7 (selesai) dan rancangan L8
+## 10. Status L3 sampai L8 (selesai) dan rancangan L9
 
 ### 10.1 Keputusan L3 yang dipakai
 
@@ -494,31 +495,71 @@ PATH PHP saat ini: `D:\laragon\bin\php\php-8.3.36-Win32-vs16-x64`.
 - Perintah PowerShell yang memuat tanda kutip ganda di dalam `mysql -e '...'` gagal (`Unknown column`); gunakan kutip ganda di luar dan kutip tunggal di dalam, dan tulis `settings.key` untuk kolom `key`.
 - Edit parsial pada berkas besar (mis. `PaymentService.php`, `show.blade.php`) sering terlewat; setelah mengedit, cek dengan `Select-String` atau tempel isi berkas untuk diperiksa.
 
-### 10.11 Rancangan L8: admin, konfirmasi kode dan serah terima (untuk dikonfirmasi di awal L8)
+### 10.11 Status L8 (selesai): admin, serah terima dan armada
 
-**Tujuan:** admin memasukkan kode konfirmasi pelanggan, melihat detail pesanan, menyerahkan unit (booking menjadi `Sedang Disewa`), lalu menandai selesai saat unit kembali (booking menjadi `Selesai`, denda dihitung, unit kembali `Tersedia`). Referensi desain Stitch: `konfirmasi_kode_serah_terima` dan `jadwal_lokasi_konsol`.
+**Keputusan yang dipakai:** denda per jam keterlambatan (dibulatkan ke atas) dikali tarif yang disalin ke booking (`denda_per_keterlambatan`, Rp20.000); serah terima dibuka 1 jam sebelum jadwal mulai sampai `toleransi_ambil_menit` (30 menit) sesudah mulai, dengan opsi admin "Abaikan jendela waktu" yang dicatat di log; email `terima_kasih` dikirim saat Tandai Selesai. Tidak ada migrasi baru (semua kolom dan tabel sudah ada dari L2).
 
-**Yang dibutuhkan di awal L8 (kirim outputnya):**
+**Berkas L8:**
+
+| Berkas | Lokasi | Catatan |
+|---|---|---|
+| `Console.php` | `app/Models/` | Diubah: relasi `bookingAktif()` dan `bookings()` |
+| `HandoverService.php` | `app/Services/` | Baru. `cariByKode`, `evaluasi` (aturan serah terima), `serahkan`, `selesaikan`, `hitungDenda`; mencatat ke `activity_logs` dan `console_movements` |
+| `NotifikasiService.php` | `app/Services/` | Diubah: ditambah `sewaSelesai()` (email terima kasih, kegagalan email tidak mengganggu proses selesai) |
+| `TemplateMail.php` | `app/Mail/` | Baru: email umum dari templat database |
+| `HandoverController.php`, `FleetController.php` | `app/Http/Controllers/Admin/` | Baru |
+| `web.php` | `routes/` | Diubah (tabel di bawah) |
+| `admin.blade.php` | `resources/views/layouts/` | Diubah: menu Konfirmasi Kode dan Jadwal & Lokasi aktif (Pesanan dan Laporan masih "Segera") |
+| `konfirmasi.blade.php`, `armada.blade.php` | `resources/views/admin/` | Baru |
+| `sederhana.blade.php` | `resources/views/emails/` | Baru |
+
+**Route L8 (semua `auth` + `role:admin`):**
+
+| URL | Nama | Fungsi |
+|---|---|---|
+| `GET /admin/konfirmasi` | `admin.konfirmasi` | Form kode konfirmasi |
+| `POST /admin/konfirmasi` | `admin.konfirmasi.cek` | Verifikasi kode, tampilkan detail (throttle 30/menit) |
+| `POST /admin/konfirmasi/serahkan` | `admin.konfirmasi.serahkan` | Serah terima unit; dicocokkan dengan kode booking **dan** kode konfirmasi |
+| `GET /admin/armada` | `admin.armada` | Jadwal & lokasi konsol, ringkasan armada |
+| `POST /admin/armada/{kode_booking}/selesai` | `admin.armada.selesai` | Tandai selesai, hitung denda |
+
+**Aturan di `HandoverService`:**
+- Serah terima hanya untuk booking `Dibayar`, kode belum dipakai, unit `Tersedia`, dan dalam jendela waktu. Booking `Sedang Disewa`, `Selesai`, `Dibatalkan`, atau `Menunggu Pembayaran` ditolak dengan pesan yang jelas.
+- Serah terima (dalam satu transaksi dengan penguncian booking lalu unit): booking `Sedang Disewa`, `kode_dipakai=1`, `waktu_serah_terima`, `admin_konfirmasi_id`; unit `Disewa`, `booking_aktif_id`, `lokasi_saat_ini` (`Dibawa pelanggan` atau `Di alamat pelanggan` bila Diantar); semua pengecekan diulang di dalam transaksi.
+- Tandai Selesai: booking `Selesai`, `waktu_kembali`, `denda`, `catatan_kondisi`; unit `Tersedia`, `Di tempat sewa`, `booking_aktif_id` kosong; email terima kasih lewat `DB::afterCommit()`.
+- Setiap aksi tercatat di `activity_logs` (aksi `serah_terima` dan `selesai_sewa`, dengan `admin_id`) dan perpindahan unit di `console_movements`.
+
+**Hasil tes (semua lolos):** menu admin aktif; kode salah ditolak; kode di luar jendela waktu menampilkan opsi abaikan; kode valid menampilkan detail dan dapat diserahkan; status booking dan unit berubah konsisten; satu baris di `activity_logs` dan `console_movements`; kode yang sama tidak bisa dipakai dua kali; kartu armada menampilkan pemegang, batas kembali, dan sisa waktu; keterlambatan dihitung benar (90 menit menjadi 2 jam menjadi Rp40.000); Tandai Selesai mengembalikan unit ke `Tersedia`; email terima kasih tercatat di log; pelanggan yang membuka alamat admin mendapat 403.
+
+**Catatan dan kejadian saat L8:**
+- Untuk menguji jendela waktu dan keterlambatan, jadwal booking uji digeser lewat `php artisan tinker --execute="App\Models\Booking::where('kode_booking','KODE')->update([...]);"` (ubah `waktu_mulai` dan `waktu_selesai`). Hanya untuk data uji.
+- Unit berstatus `Disewa` tidak bisa menerima serah terima booking lain; selesaikan penyewaan sebelumnya dulu.
+- Menu admin lain (Pesanan, Laporan, dll.) baru aktif di L10 dan L11; menu Perangkat digabung ke "Jadwal & Lokasi" untuk status unit, sedangkan pengelolaan data unit ada di L10.
+
+### 10.12 Rancangan L9: pelacakan pengantaran (untuk dikonfirmasi di awal L9)
+
+**Tujuan:** pesanan dengan cara penerimaan **Diantar** punya status pengantaran yang bisa diubah admin dan dilihat pelanggan sebagai linimasa di halaman pesanan. Status: `Menunggu Dikirim` lalu `Kurir Ditugaskan` lalu `Dalam Perjalanan` lalu `Telah Diterima`; cabang `Gagal Dikirim`.
+
+**Yang dibutuhkan di awal L9 (kirim outputnya):**
 
 ```powershell
-mysql -u root gamebox_rent -e 'DESCRIBE activity_logs;'
-mysql -u root gamebox_rent -e 'DESCRIBE console_movements;'
-mysql -u root gamebox_rent -e 'SELECT kode_unit, status, lokasi_saat_ini, booking_aktif_id FROM consoles;'
+mysql -u root gamebox_rent -e 'DESCRIBE deliveries;'
+mysql -u root gamebox_rent -e 'DESCRIBE delivery_events;'
 ```
 
-**Usulan isi L8:**
-- Menu sidebar admin diaktifkan: Konfirmasi Kode dan Jadwal & Lokasi Konsol (menu lain tetap "Segera" sampai L10).
-- **Konfirmasi Kode:** kolom input kode, validasi di server (booking `Dibayar`, kode belum dipakai, waktu masuk jendela pengambilan), kartu detail pelanggan, unit, jadwal, dan metode serah; tombol **Serahkan Unit** (dalam satu transaksi): booking menjadi `Sedang Disewa`, `kode_dipakai=1`, `waktu_serah_terima`, `admin_konfirmasi_id` terisi; unit menjadi `Disewa` dengan `booking_aktif_id` dan `lokasi_saat_ini`; dicatat di `activity_logs` dan `console_movements`.
-- **Jadwal & Lokasi Konsol:** ringkasan armada (Ready, Disewa, Terlambat, Perawatan), kartu per unit (pemegang, batas kembali, lokasi tercatat, booking lanjutan), tombol **Tandai Selesai** yang hanya aktif sesuai aturan.
-- **Tandai Selesai:** isi `waktu_kembali`, `catatan_kondisi`, hitung `denda` dari keterlambatan, booking `Selesai`, unit `Tersedia` dengan `lokasi_saat_ini` "Di tempat sewa", `booking_aktif_id` kosong; email `terima_kasih` opsional.
-- Semua aksi admin dijaga `auth` + `role:admin` dan dicatat siapa yang melakukannya.
+**Usulan isi L9:**
+- Catatan pengantaran (`deliveries`) dibuat otomatis ketika booking Diantar menjadi `Dibayar`; setiap perubahan status menambah baris di `delivery_events` (linimasa dengan waktu dan pelaku).
+- Halaman admin untuk daftar pengantaran dan mengubah status (menugaskan kurir, berangkat, tiba, gagal) beserta catatan; kurir dicatat sebagai **nama** (tanpa akun kurir).
+- Linimasa status di halaman pesanan pelanggan (hanya untuk pesanan Diantar).
+- Saat status mencapai `Telah Diterima`, admin memasukkan kode konfirmasi pelanggan sehingga serah terima unit (booking `Sedang Disewa`) berjalan lewat `HandoverService` yang sama.
+- Aksi dicatat di `activity_logs`.
 
-**Pertanyaan yang dikonfirmasi di awal L8:**
-1. Denda: dihitung per jam keterlambatan (usulan, jam dibulatkan ke atas, kelipatan `denda_keterlambatan`) atau satu kali per keterlambatan?
-2. Jendela pengambilan: kode hanya berlaku dari berapa lama sebelum jadwal mulai sampai `toleransi_ambil_menit` (30 menit) sesudah mulai? (usulan: boleh dari 1 jam sebelum mulai sampai 30 menit sesudah)
-3. Email `terima_kasih` dikirim saat Tandai Selesai (usulan) atau ditunda?
+**Pertanyaan yang dikonfirmasi di awal L9:**
+1. Kurir dicatat sebagai nama (usulan) atau perlu akun kurir sendiri?
+2. `Telah Diterima` wajib memasukkan kode konfirmasi dan otomatis melakukan serah terima (usulan), atau terpisah dari menu Konfirmasi Kode?
+3. Perlu email ke pelanggan saat status "Dalam Perjalanan" (usulan: tidak dulu)?
 
-**Hasil yang benar di akhir L8:** kode yang valid menampilkan detail dan bisa diserahkan sekali saja (kode kedua kali, kode salah, atau booking belum dibayar ditolak dengan pesan jelas); status booking dan unit berubah konsisten; Tandai Selesai menghitung denda yang benar; semua aksi tercatat di log; commit `L8: admin serah terima`.
+**Hasil yang benar di akhir L9:** pesanan Diantar mendapat catatan pengantaran otomatis setelah dibayar; perubahan status berurutan dan tercatat di linimasa; urutan status yang salah ditolak; pelanggan melihat linimasa; serah terima lewat pengantaran konsisten dengan L8; commit `L9: pelacakan pengantaran`.
 
 ---
 
@@ -634,12 +675,19 @@ mysql -u root gamebox_rent -e 'SELECT kode_unit, status, lokasi_saat_ini, bookin
 - [x] Tes lolos (termasuk kirim manual untuk booking lama)
 - [x] Commit `L7: invoice dan email`
 
-### L8 (berikutnya)
-- [ ] Output `DESCRIBE activity_logs`, `DESCRIBE console_movements`, status unit di `consoles` dikirim
-- [ ] Keputusan: denda per jam atau sekali, jendela pengambilan kode, email terima kasih
-- [ ] Menu admin Konfirmasi Kode dan Jadwal & Lokasi Konsol aktif
-- [ ] Serah terima (`Sedang Disewa`) dan Tandai Selesai (`Selesai`, denda, unit `Tersedia`) dalam transaksi, tercatat di log
-- [ ] Commit `L8: admin serah terima`
+### L8
+- [x] Output `DESCRIBE activity_logs`, `DESCRIBE console_movements`, status unit di `consoles` dikirim
+- [x] Keputusan: denda per jam, jendela pengambilan 1 jam sebelum sampai toleransi 30 menit, email terima kasih
+- [x] Menu admin Konfirmasi Kode dan Jadwal & Lokasi aktif
+- [x] Serah terima (`Sedang Disewa`) dan Tandai Selesai (`Selesai`, denda, unit `Tersedia`) dalam transaksi, tercatat di log
+- [x] Tes lolos
+- [x] Commit `L8: admin serah terima`
+
+### L9 (berikutnya)
+- [ ] Output `DESCRIBE deliveries` dan `DESCRIBE delivery_events` dikirim
+- [ ] Keputusan: kurir sebagai nama, kode konfirmasi saat Telah Diterima, email Dalam Perjalanan
+- [ ] Catatan pengantaran otomatis untuk pesanan Diantar yang sudah dibayar, halaman admin, linimasa pelanggan
+- [ ] Commit `L9: pelacakan pengantaran`
 
 ---
 
@@ -647,8 +695,8 @@ mysql -u root gamebox_rent -e 'SELECT kode_unit, status, lokasi_saat_ini, bookin
 
 1. Selesaikan checklist langkah yang sedang berjalan.
 2. Kirim bukti: output perintah cek atau screenshot halaman.
-3. Tulis **"lanjut L8"** (atau langkah berikutnya).
+3. Tulis **"lanjut L9"** (atau langkah berikutnya).
 
 Jika memulai percakapan baru, lampirkan README ini + `PRD_GameBox_Rent.pdf` + README dan zip proyek Apps Script lama (acuan aturan bisnis dan tes) + `stitch_prd_visual_interface_prototype.zip`, lalu tulis:
 
-> Saya memindahkan proyek GameBox Rent dari Google Apps Script ke Laravel 13.40 (PHP 8.3, Blade + Tailwind + MySQL via Laragon di Windows, pembayaran Midtrans sandbox). L1, L2 (migrasi database + seeder), L3 (layout, login pelanggan dan admin terpisah, role + middleware), L4 (beranda dan katalog unit), L5 (booking: jadwal, bentrok + buffer, harga dihitung server), dan L6 (pembayaran Midtrans sandbox: popup Snap, cek status, kode konfirmasi, riwayat pesanan) dan L7 (invoice PDF dan email konfirmasi pembayaran) sudah selesai, lolos tes, dan di-commit. Baca README_Laravel.md. Lanjutkan dari **L8: admin konfirmasi kode, serah terima, tandai selesai, dan lokasi konsol (desain Stitch `konfirmasi_kode_serah_terima` dan `jadwal_lokasi_konsol`)**, step by step, beri kode dan README per langkah (jangan zip), jalankan satu perintah per baris, dan sebutkan file mana yang dibuat baru atau diubah.
+> Saya memindahkan proyek GameBox Rent dari Google Apps Script ke Laravel 13.40 (PHP 8.3, Blade + Tailwind + MySQL via Laragon di Windows, pembayaran Midtrans sandbox). L1, L2 (migrasi database + seeder), L3 (layout, login pelanggan dan admin terpisah, role + middleware), L4 (beranda dan katalog unit), L5 (booking: jadwal, bentrok + buffer, harga dihitung server), dan L6 (pembayaran Midtrans sandbox: popup Snap, cek status, kode konfirmasi, riwayat pesanan) L7 (invoice PDF dan email konfirmasi pembayaran), dan L8 (admin konfirmasi kode, serah terima, tandai selesai, armada) sudah selesai, lolos tes, dan di-commit. Baca README_Laravel.md. Lanjutkan dari **L9: pelacakan pengantaran untuk pesanan Diantar (status, linimasa, halaman admin)**, step by step, beri kode dan README per langkah (jangan zip), jalankan satu perintah per baris, dan sebutkan file mana yang dibuat baru atau diubah.
