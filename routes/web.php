@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\DeliveryController;
 use App\Http\Controllers\Admin\FleetController;
 use App\Http\Controllers\Admin\HandoverController;
 use App\Http\Controllers\Auth\AdminAuthController;
@@ -62,5 +63,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::get('/armada', [FleetController::class, 'index'])->name('armada');
         Route::post('/armada/{booking}/selesai', [FleetController::class, 'selesai'])->name('armada.selesai');
+
+        // L9: pelacakan pengantaran
+        Route::get('/pengiriman', [DeliveryController::class, 'index'])->name('pengiriman');
+        Route::post('/pengiriman/{booking}/ubah', [DeliveryController::class, 'ubah'])->middleware('throttle:60,1')->name('pengiriman.ubah');
     });
 });

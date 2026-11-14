@@ -206,9 +206,13 @@ class PaymentService
             'kode_konfirmasi' => $this->kodeKonfirmasi(),
         ])->save();
 
+        // L9: pesanan Diantar otomatis mendapat catatan pengantaran.
+        if ($booking->metode_serah === 'Diantar') {
+            app(DeliveryService::class)->mulai($booking);
+        }
+
         return true;
     }
-
 
     private function kodeKonfirmasi(): string
     {

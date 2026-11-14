@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Exceptions\BookingException;
 use App\Models\Booking;
 use App\Models\Console;
+use App\Models\Delivery;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -80,10 +81,14 @@ class HandoverService
         return ['bisa' => true, 'pesan' => null, 'bisa_dipaksa' => false, 'dipaksa' => $diLuar];
     }
 
-    /** Serah terima unit ke pelanggan. Semua pengecekan diulang di dalam transaksi. */
-    public function serahkan(Booking $booking, User $admin, bool $abaikanJendela = false): Booking
+    /**
+     * Serah terima unit ke pelanggan. Semua pengecekan diulang di dalam transaksi.
+     * $sinkronPengiriman: bila true, catatan pengantaran (pesanan Diantar) ikut menjadi
+     * "Telah Diterima". DeliveryService mengirim false karena ia mengurus statusnya sendiri.
+     */
+    public function serahkan(Booking $booking, User $admin, bool $abaikanJendela = false, bool $sinkronPengiriman = true): Booking
     {
-        return DB::transaction(function () use ($booking, $admin, $abaikanJendela) {
+        return DB::transaction(function () use ($booking, $admin, $abaikanJendela, $sinkronPengiriman) {
             // Urutan kunci: booking dulu, lalu unit.
             $b = Booking::with('user')->lockForUpdate()->findOrFail($booking->id);
             $console = Console::lockForUpdate()->findOrFail($b->console_id);
@@ -113,6 +118,10 @@ class HandoverService
             $this->catat($admin, 'serah_terima',
                 "Serah terima {$b->kode_booking} unit {$console->kode_unit} ke {$b->user->name}"
                 .($hasil['dipaksa'] ? ' (jendela waktu diabaikan)' : ''));
+
+            if ($sinkronPengiriman && $b->metode_serah === 'Diantar') {
+                $this->sinkronPengiriman($b, $admin);
+            }
 
             return $b;
         });
@@ -169,6 +178,31 @@ class HandoverService
         }
 
         return (int) ceil($detik / 3600) * (int) $b->denda_per_keterlambatan;
+    }
+
+    /** Serah terima lewat menu Konfirmasi Kode juga menutup catatan pengantaran. */
+    private function sinkronPengiriman(Booking $b, User $admin): void
+    {
+        $d = Delivery::where('booking_id', $b->id)->lockForUpdate()->first();
+        if (! $d || $d->status_kirim === 'Telah Diterima') {
+            return;
+        }
+
+        $dari = $d->status_kirim;
+        $d->forceFill([
+            'status_kirim' => 'Telah Diterima',
+            'catatan' => 'Serah terima dicatat lewat menu Konfirmasi Kode.',
+            'admin_id' => $admin->id,
+        ])->save();
+
+        DB::table('delivery_events')->insert([
+            'booking_id' => $b->id,
+            'status_kirim' => 'Telah Diterima',
+            'catatan' => 'Unit diterima pelanggan. Serah terima dicatat lewat menu Konfirmasi Kode (status pengantaran sebelumnya: '.$dari.').',
+            'admin_id' => $admin->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 
     private function tolak(string $pesan, bool $bisaDipaksa = false): array

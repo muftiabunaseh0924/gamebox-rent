@@ -15,16 +15,16 @@
 
         @php
             $menu = [
-                ['admin.dashboard', 'dashboard', 'Dasbor'],
-                ['admin.konfirmasi*', 'pin', 'Konfirmasi Kode'],
-                ['admin.armada*', 'videogame_asset', 'Jadwal & Lokasi'],
+                ['admin.dashboard', 'admin.dashboard', 'dashboard', 'Dasbor'],
+                ['admin.konfirmasi*', 'admin.konfirmasi', 'pin', 'Konfirmasi Kode'],
+                ['admin.pengiriman*', 'admin.pengiriman', 'local_shipping', 'Pengiriman'],
+                ['admin.armada*', 'admin.armada', 'videogame_asset', 'Jadwal & Lokasi'],
             ];
             $menuNanti = [['receipt_long', 'Pesanan'], ['payments', 'Laporan']];
-            $rute = ['admin.dashboard' => 'admin.dashboard', 'admin.konfirmasi*' => 'admin.konfirmasi', 'admin.armada*' => 'admin.armada'];
         @endphp
         <nav class="flex-1 space-y-1 p-4">
-            @foreach ($menu as [$pola, $ikon, $label])
-                <a href="{{ route($rute[$pola]) }}"
+            @foreach ($menu as [$pola, $rute, $ikon, $label])
+                <a href="{{ route($rute) }}"
                    class="flex items-center gap-3 rounded-lg px-4 py-3 font-headline text-sm font-semibold
                    {{ request()->routeIs($pola) ? 'bg-primary-container text-on-surface' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
                     <span class="material-symbols-outlined text-[20px]">{{ $ikon }}</span> {{ $label }}
@@ -52,6 +52,7 @@
             <div class="flex items-center gap-3">
                 <nav class="flex gap-2 md:hidden">
                     <a href="{{ route('admin.konfirmasi') }}" class="btn-secondary !px-3 !py-2" aria-label="Konfirmasi Kode"><span class="material-symbols-outlined text-[18px]">pin</span></a>
+                    <a href="{{ route('admin.pengiriman') }}" class="btn-secondary !px-3 !py-2" aria-label="Pengiriman"><span class="material-symbols-outlined text-[18px]">local_shipping</span></a>
                     <a href="{{ route('admin.armada') }}" class="btn-secondary !px-3 !py-2" aria-label="Jadwal dan Lokasi"><span class="material-symbols-outlined text-[18px]">videogame_asset</span></a>
                 </nav>
                 <span class="hidden text-sm text-on-surface-variant sm:inline">{{ auth()->user()->name }}</span>
