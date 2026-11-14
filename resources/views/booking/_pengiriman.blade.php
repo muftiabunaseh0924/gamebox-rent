@@ -17,7 +17,7 @@
 
     <ol class="mt-5 grid gap-4 sm:grid-cols-4">
         @foreach ($langkah as $i => $nama)
-            @php $sudah = $i <= $dicapai && ! ($gagal && $i === $dicapai && $dicapai < 3 && false); @endphp
+            @php $sudah = $i <= $dicapai; @endphp
             <li class="flex items-center gap-3 sm:flex-col sm:text-center">
                 <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-headline text-sm font-bold
                     {{ $sudah ? 'bg-primary-container text-on-surface' : 'bg-surface-container-high text-outline' }}">

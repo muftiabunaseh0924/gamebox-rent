@@ -4,7 +4,7 @@ Pemindahan proyek **GameBox Rent** dari Google Apps Script + Google Sheets ke **
 
 Proyek lama (Apps Script, Langkah 1 sampai 6 selesai dan lolos tes) **tetap disimpan sebagai acuan** aturan bisnis, daftar tes, dan desain. Jangan dihapus.
 
-**Posisi sekarang: L1 sampai L8 selesai dan lolos tes. Berikutnya L9.**
+**Posisi sekarang: L1 sampai L9 selesai dan lolos tes. Berikutnya L10 (dikerjakan bertahap: L10a, L10b, L10c).**
 
 ---
 
@@ -36,8 +36,8 @@ Proyek lama (Apps Script, Langkah 1 sampai 6 selesai dan lolos tes) **tetap disi
 | L6 | **Pembayaran Midtrans (sandbox)**: Snap, webhook, kode konfirmasi setelah `settlement`, riwayat, detail pesanan | **Selesai, lolos semua tes** (bagian 10.9) |
 | L7 | Invoice PDF + email (DomPDF + Laravel Mail) | **Selesai, lolos semua tes** (bagian 10.10) |
 | L8 | Admin: konfirmasi kode, serah terima, tandai selesai, lokasi konsol | **Selesai, lolos semua tes** (bagian 10.11) |
-| **L9** | Pelacakan kurir (berbasis status) | **Berikutnya** (bagian 10.12) |
-| L10 | Admin: dashboard, pesanan, jadwal, perangkat, harga, pengaturan, pelanggan, log | Belum |
+| L9 | Pelacakan kurir (berbasis status) | **Selesai, lolos semua tes** (bagian 10.12) |
+| **L10** | Admin: dashboard, pesanan, jadwal, perangkat, harga, pengaturan, pelanggan, log. Dibagi: **L10a** dasbor KPI + manajemen pesanan; **L10b** perangkat, harga, pengaturan, tanggal libur; **L10c** pelanggan + log aktivitas | **Berikutnya: L10a** (bagian 10.13) |
 | L11 | Laporan keuangan + ekspor PDF dan Excel | Belum |
 | L12 | Scheduler (batal otomatis, pengingat email) | Belum |
 | L13 | Pengujian (kriteria penerimaan PRD) + deploy | Belum |
@@ -209,7 +209,8 @@ Riwayat saat ini:
 | `865004b` | `L5: booking` |
 | (L6) | `L6: pasang paket Midtrans dan konfigurasi sandbox`, lalu `L6: pembayaran midtrans` |
 | `b29a3b7` | `L7: invoice dan email` |
-| (L8) | `L8: admin serah terima` |
+| `6956e8d` | `L8: admin serah terima` |
+| (L9) | `L9: pelacakan pengantaran` |
 
 Format commit tiap langkah: `Lx: ringkasan`. Sebelum `git add .`, cek `git status` dan pastikan `.env` tidak muncul (sudah ada di `.gitignore` bawaan).
 
@@ -266,7 +267,7 @@ PATH PHP saat ini: `D:\laragon\bin\php\php-8.3.36-Win32-vs16-x64`.
 
 ---
 
-## 10. Status L3 sampai L8 (selesai) dan rancangan L9
+## 10. Status L3 sampai L9 (selesai) dan rancangan L10
 
 ### 10.1 Keputusan L3 yang dipakai
 
@@ -536,30 +537,78 @@ PATH PHP saat ini: `D:\laragon\bin\php\php-8.3.36-Win32-vs16-x64`.
 - Unit berstatus `Disewa` tidak bisa menerima serah terima booking lain; selesaikan penyewaan sebelumnya dulu.
 - Menu admin lain (Pesanan, Laporan, dll.) baru aktif di L10 dan L11; menu Perangkat digabung ke "Jadwal & Lokasi" untuk status unit, sedangkan pengelolaan data unit ada di L10.
 
-### 10.12 Rancangan L9: pelacakan pengantaran (untuk dikonfirmasi di awal L9)
+### 10.12 Status L9 (selesai): pelacakan pengantaran
 
-**Tujuan:** pesanan dengan cara penerimaan **Diantar** punya status pengantaran yang bisa diubah admin dan dilihat pelanggan sebagai linimasa di halaman pesanan. Status: `Menunggu Dikirim` lalu `Kurir Ditugaskan` lalu `Dalam Perjalanan` lalu `Telah Diterima`; cabang `Gagal Dikirim`.
+**Keputusan yang dipakai:** kurir dicatat sebagai **nama dan nomor HP** (kolom `nama_kurir` dan `hp_kurir`, tanpa akun kurir); status `Telah Diterima` wajib memasukkan kode konfirmasi pelanggan dan otomatis menjalankan serah terima lewat `HandoverService` (aturan L8 yang sama); email "Dalam Perjalanan" tidak dikirim. Tidak ada migrasi baru (tabel `deliveries` dan `delivery_events` sudah ada dari L2).
 
-**Yang dibutuhkan di awal L9 (kirim outputnya):**
+**Status dan peralihan:** `Menunggu Dikirim` lalu `Kurir Ditugaskan` lalu `Dalam Perjalanan` lalu `Telah Diterima`; cabang `Gagal Dikirim` (bisa ditugaskan ulang).
+
+| Aksi admin | Boleh dari status | Hasil | Syarat |
+|---|---|---|---|
+| Tugaskan | Menunggu Dikirim, Gagal Dikirim | Kurir Ditugaskan | Nama kurir, HP valid (`08...`/`62...`/`+62...`) |
+| Berangkat | Kurir Ditugaskan | Dalam Perjalanan | - |
+| Gagal | Kurir Ditugaskan, Dalam Perjalanan | Gagal Dikirim | Alasan minimal 5 karakter |
+| Terima | Dalam Perjalanan | Telah Diterima + booking `Sedang Disewa` | Kode konfirmasi cocok, jendela waktu serah terima terpenuhi (atau diabaikan dan dicatat), unit `Tersedia` |
+
+**Berkas L9:**
+
+| Berkas | Lokasi | Catatan |
+|---|---|---|
+| `Delivery.php`, `DeliveryEvent.php` | `app/Models/` | Baru (tanpa `$fillable`; `Delivery::URUTAN`, `kelasStatus()`) |
+| `Booking.php` | `app/Models/` | Diubah: relasi `delivery()` dan `deliveryEvents()` |
+| `DeliveryService.php` | `app/Services/` | Baru. `mulai()` (membuat catatan, aman diulang), `sinkronkan()` (melengkapi yang terlewat dan menutup status yang tertinggal), `ubah()` (aksi di atas, dalam transaksi) |
+| `HandoverService.php` | `app/Services/` | Diubah: `serahkan()` menerima `$sinkronPengiriman`; serah terima lewat menu **Konfirmasi Kode** ikut menutup catatan pengantaran menjadi `Telah Diterima` |
+| `PaymentService.php` | `app/Services/` | Diubah: `tandaiDibayar()` memanggil `DeliveryService::mulai()` untuk pesanan Diantar |
+| `DeliveryController.php` | `app/Http/Controllers/Admin/` | Baru: daftar (tab Aktif, Gagal, Selesai) dan `ubah` |
+| `web.php` | `routes/` | Diubah: `GET /admin/pengiriman` (`admin.pengiriman`), `POST /admin/pengiriman/{kode_booking}/ubah` (`admin.pengiriman.ubah`, throttle 60/menit) |
+| `admin.blade.php` | `resources/views/layouts/` | Diubah: menu **Pengiriman** |
+| `pengiriman.blade.php` | `resources/views/admin/` | Baru: kartu per pengantaran, linimasa, form aksi sesuai status |
+| `_pengiriman.blade.php` | `resources/views/booking/` | Baru: kartu pelacakan untuk pelanggan (empat langkah, kurir, linimasa) |
+| `show.blade.php` | `resources/views/booking/` | Diubah: `@include('booking._pengiriman')` untuk pesanan Diantar yang sudah dibayar |
+
+**Aturan penting:**
+- Catatan pengantaran dibuat otomatis ketika pesanan **Diantar** menjadi `Dibayar`. Halaman admin juga membuat yang terlewat dan menutup catatan yang statusnya tertinggal padahal unit sudah diserahkan (`sinkronkan()`).
+- Setiap perubahan status menambah baris di `delivery_events` (linimasa, dengan `admin_id`) dan di `activity_logs` (aksi `pengantaran`).
+- Kartu pelacakan pelanggan hanya tampil untuk pesanan Diantar yang sudah dibayar; pelanggan hanya melihat pesanannya sendiri.
+
+**Hasil tes (semua lolos):** catatan otomatis setelah bayar; HP tidak valid ditolak; alasan gagal terlalu pendek ditolak; kode konfirmasi salah ditolak; kode benar menyelesaikan serah terima (booking `Sedang Disewa`, unit `Disewa` dengan lokasi `Di alamat pelanggan`); tugaskan ulang setelah gagal; linimasa tampil di admin dan pelanggan; pesanan Ambil Sendiri tidak muncul; pelanggan yang membuka alamat admin mendapat 403.
+
+**Catatan dan kejadian saat L9 (agar tidak terulang):**
+- `View [admin.pengiriman] not found`: berkas tampilan belum dibuat; yang bekerja hanya controller dan layanan.
+- **Celah yang ditemukan lewat cek database:** serah terima lewat menu Konfirmasi Kode (L8) tidak menutup catatan pengantaran, sehingga status tertinggal (mis. `Gagal Dikirim` padahal pesanan `Sedang Disewa`). Diperbaiki di `HandoverService` dan `sinkronkan()`.
+- Menimpa `show.blade.php` dengan versi lama menghilangkan `@include('booking._pengiriman')`, sehingga kartu pelacakan tidak tampil di sisi pelanggan. Cek dengan `Select-String -Path resources\views\booking\show.blade.php -Pattern "_pengiriman"`.
+- Edit parsial di `PaymentService.php` sempat membuat blok `forceFill` dan `return true` ganda. Untuk berkas yang berubah banyak, lebih aman menimpa seluruh berkas daripada menyisipkan potongan.
+- Di PowerShell, gunakan kutip ganda di luar dan kutip tunggal di dalam untuk `mysql -e`: `mysql -u root gamebox_rent -e "SELECT ... WHERE kode_booking='PS5-XXXX';"`.
+
+### 10.13 Rancangan L10: panel admin lengkap (dikerjakan bertahap)
+
+L10 besar, jadi dipecah menjadi tiga bagian agar tiap bagian bisa dites dan di-commit sendiri. Referensi desain Stitch: `dashboard_admin_kpi_operasional` (menu: Dashboard, Konfirmasi Kode, Manajemen Pesanan, Jadwal & Lokasi Konsol, Laporan Keuangan, Pengaturan Sistem).
+
+**L10a: dasbor KPI dan manajemen pesanan**
+- Dasbor admin (`/admin`): kartu KPI (total pemasukan periode, total transaksi, rata-rata order, konsol aktif/disewa, serah terima hari ini, keterlambatan dan denda berjalan), grafik pemasukan harian, proporsi unit sewa PS5 vs PS4 dan stik tambahan. Data dari `payments` yang `Berhasil`, `bookings`, dan `consoles`. Grafik dibuat dengan CSS/SVG sendiri (tanpa paket tambahan).
+- Manajemen Pesanan: daftar semua pesanan dengan filter status, rentang tanggal, dan pencarian (kode, nama, email), halaman detail admin (pelanggan, jadwal, rincian biaya, pembayaran, pengantaran, log), dan aksi **Batalkan pesanan** dengan alasan (hanya sebelum serah terima; unit dan jadwal dilepas; email templat `dibatalkan`; refund dana dilakukan manual di dasbor Midtrans).
+- Menu sidebar Pesanan menjadi aktif; unduh invoice oleh admin.
+
+**L10b: perangkat, harga, pengaturan, tanggal libur**
+- Perangkat: tambah, ubah, nonaktifkan unit (kode, jenis, nama, tag, deskripsi, game, status Perawatan/Nonaktif); unggah foto (`php artisan storage:link`, foto menggantikan placeholder di katalog).
+- Harga paket (`packages`), pengaturan sistem (`settings`: buffer, denda, batas bayar, toleransi, stok stik, slot jam, pengiriman, identitas situs), konten beranda (`contents`), templat email (`email_templates`), tanggal libur (`blocked_dates` dengan kolom `tanggal`, `console_id`, `alasan`).
+
+**L10c: pelanggan dan log**
+- Daftar pelanggan (cari, lihat riwayat pesanan, ubah status `Aktif`/`Nonaktif` yang sudah ditolak di login dan `EnsureRole`), log aktivitas admin (`activity_logs`) dengan filter aksi dan tanggal.
+
+**Pertanyaan yang dikonfirmasi di awal L10a:**
+1. Periode default dasbor: **bulan berjalan** (usulan) atau 30 hari terakhir?
+2. Grafik: dibuat sendiri dengan CSS/SVG (usulan, tanpa paket) atau memakai Chart.js?
+3. Pembatalan pesanan yang **sudah dibayar** oleh admin: diizinkan sebelum serah terima dengan alasan wajib dan email ke pelanggan (usulan), atau hanya pesanan yang belum dibayar?
+
+**Yang dibutuhkan di awal L10a (kirim outputnya):**
 
 ```powershell
-mysql -u root gamebox_rent -e 'DESCRIBE deliveries;'
-mysql -u root gamebox_rent -e 'DESCRIBE delivery_events;'
+mysql -u root gamebox_rent -e "SELECT status_booking, COUNT(*) AS jumlah FROM bookings GROUP BY status_booking;"
+mysql -u root gamebox_rent -e "SELECT status_pembayaran, COUNT(*) AS jumlah FROM payments GROUP BY status_pembayaran;"
 ```
 
-**Usulan isi L9:**
-- Catatan pengantaran (`deliveries`) dibuat otomatis ketika booking Diantar menjadi `Dibayar`; setiap perubahan status menambah baris di `delivery_events` (linimasa dengan waktu dan pelaku).
-- Halaman admin untuk daftar pengantaran dan mengubah status (menugaskan kurir, berangkat, tiba, gagal) beserta catatan; kurir dicatat sebagai **nama** (tanpa akun kurir).
-- Linimasa status di halaman pesanan pelanggan (hanya untuk pesanan Diantar).
-- Saat status mencapai `Telah Diterima`, admin memasukkan kode konfirmasi pelanggan sehingga serah terima unit (booking `Sedang Disewa`) berjalan lewat `HandoverService` yang sama.
-- Aksi dicatat di `activity_logs`.
-
-**Pertanyaan yang dikonfirmasi di awal L9:**
-1. Kurir dicatat sebagai nama (usulan) atau perlu akun kurir sendiri?
-2. `Telah Diterima` wajib memasukkan kode konfirmasi dan otomatis melakukan serah terima (usulan), atau terpisah dari menu Konfirmasi Kode?
-3. Perlu email ke pelanggan saat status "Dalam Perjalanan" (usulan: tidak dulu)?
-
-**Hasil yang benar di akhir L9:** pesanan Diantar mendapat catatan pengantaran otomatis setelah dibayar; perubahan status berurutan dan tercatat di linimasa; urutan status yang salah ditolak; pelanggan melihat linimasa; serah terima lewat pengantaran konsisten dengan L8; commit `L9: pelacakan pengantaran`.
+**Hasil yang benar di akhir L10a:** angka KPI sama dengan hitungan manual dari database; pencarian dan filter pesanan benar; pembatalan melepas jadwal dan unit serta mengirim email; semua aksi tercatat di `activity_logs`; commit `L10a: dasbor dan manajemen pesanan`.
 
 ---
 
@@ -683,11 +732,23 @@ mysql -u root gamebox_rent -e 'DESCRIBE delivery_events;'
 - [x] Tes lolos
 - [x] Commit `L8: admin serah terima`
 
-### L9 (berikutnya)
-- [ ] Output `DESCRIBE deliveries` dan `DESCRIBE delivery_events` dikirim
-- [ ] Keputusan: kurir sebagai nama, kode konfirmasi saat Telah Diterima, email Dalam Perjalanan
-- [ ] Catatan pengantaran otomatis untuk pesanan Diantar yang sudah dibayar, halaman admin, linimasa pelanggan
-- [ ] Commit `L9: pelacakan pengantaran`
+### L9
+- [x] Output `DESCRIBE deliveries` dan `DESCRIBE delivery_events` dikirim
+- [x] Keputusan: kurir nama dan HP, kode konfirmasi saat Telah Diterima, tanpa email Dalam Perjalanan
+- [x] Catatan pengantaran otomatis, halaman admin Pengiriman, linimasa pelanggan, perapian status
+- [x] Celah serah terima lewat Konfirmasi Kode diperbaiki
+- [x] Tes lolos
+- [x] Commit `L9: pelacakan pengantaran`
+
+### L10a (berikutnya): dasbor KPI dan manajemen pesanan
+- [ ] Output jumlah `bookings` per status dan `payments` per status dikirim
+- [ ] Keputusan: periode default, grafik CSS/SVG atau Chart.js, pembatalan pesanan yang sudah dibayar
+- [ ] Dasbor KPI dan grafik; daftar, filter, pencarian, dan detail pesanan admin; aksi Batalkan pesanan
+- [ ] Commit `L10a: dasbor dan manajemen pesanan`
+
+### L10b dan L10c (setelah L10a)
+- [ ] L10b: perangkat (termasuk foto, `storage:link`), harga, pengaturan, konten, templat email, tanggal libur
+- [ ] L10c: pelanggan (ubah status) dan log aktivitas
 
 ---
 
@@ -695,8 +756,8 @@ mysql -u root gamebox_rent -e 'DESCRIBE delivery_events;'
 
 1. Selesaikan checklist langkah yang sedang berjalan.
 2. Kirim bukti: output perintah cek atau screenshot halaman.
-3. Tulis **"lanjut L9"** (atau langkah berikutnya).
+3. Tulis **"lanjut L10a"** (atau langkah berikutnya).
 
 Jika memulai percakapan baru, lampirkan README ini + `PRD_GameBox_Rent.pdf` + README dan zip proyek Apps Script lama (acuan aturan bisnis dan tes) + `stitch_prd_visual_interface_prototype.zip`, lalu tulis:
 
-> Saya memindahkan proyek GameBox Rent dari Google Apps Script ke Laravel 13.40 (PHP 8.3, Blade + Tailwind + MySQL via Laragon di Windows, pembayaran Midtrans sandbox). L1, L2 (migrasi database + seeder), L3 (layout, login pelanggan dan admin terpisah, role + middleware), L4 (beranda dan katalog unit), L5 (booking: jadwal, bentrok + buffer, harga dihitung server), dan L6 (pembayaran Midtrans sandbox: popup Snap, cek status, kode konfirmasi, riwayat pesanan) L7 (invoice PDF dan email konfirmasi pembayaran), dan L8 (admin konfirmasi kode, serah terima, tandai selesai, armada) sudah selesai, lolos tes, dan di-commit. Baca README_Laravel.md. Lanjutkan dari **L9: pelacakan pengantaran untuk pesanan Diantar (status, linimasa, halaman admin)**, step by step, beri kode dan README per langkah (jangan zip), jalankan satu perintah per baris, dan sebutkan file mana yang dibuat baru atau diubah.
+> Saya memindahkan proyek GameBox Rent dari Google Apps Script ke Laravel 13.40 (PHP 8.3, Blade + Tailwind + MySQL via Laragon di Windows, pembayaran Midtrans sandbox). L1, L2 (migrasi database + seeder), L3 (layout, login pelanggan dan admin terpisah, role + middleware), L4 (beranda dan katalog unit), L5 (booking: jadwal, bentrok + buffer, harga dihitung server), dan L6 (pembayaran Midtrans sandbox: popup Snap, cek status, kode konfirmasi, riwayat pesanan) L7 (invoice PDF dan email konfirmasi pembayaran), L8 (admin konfirmasi kode, serah terima, tandai selesai, armada), dan L9 (pelacakan pengantaran) sudah selesai, lolos tes, dan di-commit. Baca README_Laravel.md. Lanjutkan dari **L10a: dasbor admin KPI dan manajemen pesanan (desain Stitch `dashboard_admin_kpi_operasional`)**, step by step, beri kode dan README per langkah (jangan zip), jalankan satu perintah per baris, dan sebutkan file mana yang dibuat baru atau diubah.

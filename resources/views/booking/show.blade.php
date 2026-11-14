@@ -95,6 +95,11 @@
         </div>
     </div>
 
+    {{-- L9: pelacakan pengantaran (hanya pesanan Diantar yang sudah dibayar) --}}
+    @if ($booking->metode_serah === 'Diantar' && $sudahBayar)
+        @include('booking._pengiriman')
+    @endif
+
     @if ($riwayat->isNotEmpty())
         <div class="card mt-6">
             <h3 class="font-headline text-lg font-bold">Riwayat Pembayaran</h3>
