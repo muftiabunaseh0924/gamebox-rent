@@ -16,11 +16,12 @@
         @php
             $menu = [
                 ['admin.dashboard', 'admin.dashboard', 'dashboard', 'Dasbor'],
+                ['admin.pesanan*', 'admin.pesanan', 'receipt_long', 'Pesanan'],
                 ['admin.konfirmasi*', 'admin.konfirmasi', 'pin', 'Konfirmasi Kode'],
                 ['admin.pengiriman*', 'admin.pengiriman', 'local_shipping', 'Pengiriman'],
                 ['admin.armada*', 'admin.armada', 'videogame_asset', 'Jadwal & Lokasi'],
             ];
-            $menuNanti = [['receipt_long', 'Pesanan'], ['payments', 'Laporan']];
+            $menuNanti = [['payments', 'Laporan'], ['tune', 'Pengaturan']];
         @endphp
         <nav class="flex-1 space-y-1 p-4">
             @foreach ($menu as [$pola, $rute, $ikon, $label])
@@ -51,6 +52,8 @@
             <h1 class="font-headline text-xl font-bold">@yield('heading', 'Dasbor')</h1>
             <div class="flex items-center gap-3">
                 <nav class="flex gap-2 md:hidden">
+                    <a href="{{ route('admin.dashboard') }}" class="btn-secondary !px-3 !py-2" aria-label="Dasbor"><span class="material-symbols-outlined text-[18px]">dashboard</span></a>
+                    <a href="{{ route('admin.pesanan') }}" class="btn-secondary !px-3 !py-2" aria-label="Pesanan"><span class="material-symbols-outlined text-[18px]">receipt_long</span></a>
                     <a href="{{ route('admin.konfirmasi') }}" class="btn-secondary !px-3 !py-2" aria-label="Konfirmasi Kode"><span class="material-symbols-outlined text-[18px]">pin</span></a>
                     <a href="{{ route('admin.pengiriman') }}" class="btn-secondary !px-3 !py-2" aria-label="Pengiriman"><span class="material-symbols-outlined text-[18px]">local_shipping</span></a>
                     <a href="{{ route('admin.armada') }}" class="btn-secondary !px-3 !py-2" aria-label="Jadwal dan Lokasi"><span class="material-symbols-outlined text-[18px]">videogame_asset</span></a>

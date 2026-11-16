@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\DeliveryController;
 use App\Http\Controllers\Admin\FleetController;
 use App\Http\Controllers\Admin\HandoverController;
+use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Auth\AdminAuthController;
 use App\Http\Controllers\Auth\CustomerAuthController;
 use App\Http\Controllers\BookingController;
@@ -53,8 +55,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
     });
 
     Route::middleware(['auth', 'role:admin'])->group(function () {
-        Route::view('/', 'admin.dashboard')->name('dashboard');
+        // L10a: dasbor KPI
+        Route::get('/', AdminDashboardController::class)->name('dashboard');
         Route::post('/keluar', [AdminAuthController::class, 'logout'])->name('logout');
+
+        // L10a: manajemen pesanan
+        Route::get('/pesanan', [OrderController::class, 'index'])->name('pesanan');
+        Route::get('/pesanan/{booking}', [OrderController::class, 'show'])->name('pesanan.show');
+        Route::post('/pesanan/{booking}/batal', [OrderController::class, 'batal'])->middleware('throttle:30,1')->name('pesanan.batal');
+        Route::get('/pesanan/{booking}/invoice', [OrderController::class, 'invoice'])->name('pesanan.invoice');
 
         // L8: serah terima dan armada
         Route::get('/konfirmasi', [HandoverController::class, 'index'])->name('konfirmasi');

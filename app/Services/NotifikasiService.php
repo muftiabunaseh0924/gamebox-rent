@@ -63,4 +63,27 @@ class NotifikasiService
             return false;
         }
     }
+
+    /** Email pembatalan oleh admin. Kegagalan email tidak membatalkan proses pembatalan. */
+    public function dibatalkan(int $bookingId, string $alasan, bool $sudahBayar = false): bool
+    {
+        try {
+            $booking = Booking::with(['console', 'user'])->findOrFail($bookingId);
+            $templat = app(EmailTemplateService::class);
+            $data = array_merge($templat->dataBooking($booking), ['alasan' => $alasan]);
+            [$subjek, $isi] = $templat->render('dibatalkan', $data);
+
+            if ($sudahBayar) {
+                $isi .= "\n\nPembayaran yang sudah kamu lakukan akan dikembalikan oleh admin. Hubungi kami bila ada pertanyaan.";
+            }
+
+            Mail::to($booking->user->email)->send(new TemplateMail($booking, $subjek, $isi));
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::error('Gagal mengirim email pembatalan: '.$e->getMessage(), ['booking_id' => $bookingId]);
+
+            return false;
+        }
+    }
 }
