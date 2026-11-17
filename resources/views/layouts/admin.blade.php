@@ -4,11 +4,12 @@
     @include('partials.head')
 </head>
 <body class="min-h-screen">
+    @php $situs = app(\App\Services\SettingsService::class)->situs(); @endphp
     <aside class="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col overflow-y-auto border-r border-surface-variant/40 bg-surface-container-lowest md:flex">
         <div class="flex h-20 shrink-0 items-center gap-3 border-b border-surface-variant/40 px-6">
-            <span class="material-symbols-outlined text-3xl text-secondary">admin_panel_settings</span>
+            @include('partials.logo', ['ukuran' => 'text-3xl'])
             <span class="flex flex-col leading-none">
-                <span class="font-headline text-lg font-bold uppercase tracking-wider text-secondary">GameBox</span>
+                <span class="font-headline text-lg font-bold uppercase tracking-wider text-secondary">{{ \Illuminate\Support\Str::limit($situs['nama_situs'], 16, '') }}</span>
                 <span class="mt-1 font-headline text-[11px] font-semibold uppercase tracking-widest text-outline">Panel Admin</span>
             </span>
         </div>
@@ -23,8 +24,11 @@
                 ['admin.perangkat*', 'admin.perangkat', 'sports_esports', 'Perangkat'],
                 ['admin.harga*', 'admin.harga', 'sell', 'Harga Paket'],
                 ['admin.libur*', 'admin.libur', 'event_busy', 'Tanggal Libur'],
+                ['admin.pengaturan*', 'admin.pengaturan', 'tune', 'Pengaturan'],
+                ['admin.konten*', 'admin.konten', 'edit_note', 'Konten Beranda'],
+                ['admin.email*', 'admin.email', 'mail', 'Templat Email'],
             ];
-            $menuNanti = [['payments', 'Laporan'], ['tune', 'Pengaturan']];
+            $menuNanti = [['payments', 'Laporan']];
         @endphp
         <nav class="flex-1 space-y-1 p-4">
             @foreach ($menu as [$pola, $rute, $ikon, $label])

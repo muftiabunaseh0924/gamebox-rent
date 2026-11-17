@@ -1,12 +1,15 @@
 <?php
 
+use App\Http\Controllers\Admin\ContentController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\DeliveryController;
+use App\Http\Controllers\Admin\EmailTemplateController;
 use App\Http\Controllers\Admin\FleetController;
 use App\Http\Controllers\Admin\HandoverController;
 use App\Http\Controllers\Admin\HolidayController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PackageController;
+use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UnitController;
 use App\Http\Controllers\Auth\AdminAuthController;
 use App\Http\Controllers\Auth\CustomerAuthController;
@@ -98,5 +101,17 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/libur', [HolidayController::class, 'index'])->name('libur');
         Route::post('/libur', [HolidayController::class, 'store'])->name('libur.tambah');
         Route::post('/libur/{id}/hapus', [HolidayController::class, 'destroy'])->whereNumber('id')->name('libur.hapus');
+
+        // L10c: pengaturan, konten beranda, templat email
+        Route::get('/pengaturan', [SettingsController::class, 'index'])->name('pengaturan');
+        Route::post('/pengaturan', [SettingsController::class, 'update'])->name('pengaturan.simpan');
+
+        Route::get('/konten', [ContentController::class, 'index'])->name('konten');
+        Route::post('/konten', [ContentController::class, 'update'])->name('konten.simpan');
+
+        Route::get('/email', [EmailTemplateController::class, 'index'])->name('email');
+        Route::post('/email/{jenis}', [EmailTemplateController::class, 'update'])->name('email.simpan');
+        Route::post('/email/{jenis}/pratinjau', [EmailTemplateController::class, 'pratinjau'])->middleware('throttle:60,1')->name('email.pratinjau');
+        Route::post('/email/{jenis}/uji', [EmailTemplateController::class, 'uji'])->middleware('throttle:10,1')->name('email.uji');
     });
 });

@@ -1,4 +1,5 @@
 @php
+    $situs = app(\App\Services\SettingsService::class)->situs();
     $pengguna = auth()->user();
     $dasbor = $pengguna?->role === 'admin' ? route('admin.dashboard') : route('dashboard');
     $tautan = 'rounded-lg px-4 py-2 font-headline text-sm font-semibold tracking-wide transition-colors text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface';
@@ -6,10 +7,12 @@
 <header class="fixed inset-x-0 top-0 z-50 border-b border-surface-variant/40 bg-surface-container-lowest/80 backdrop-blur-xl">
     <div class="mx-auto flex h-20 max-w-[1320px] items-center justify-between gap-6 px-4 md:px-8">
         <a href="{{ route('home') }}" class="flex items-center gap-3">
-            <span class="material-symbols-outlined text-3xl text-secondary">sports_esports</span>
+            @include('partials.logo', ['ukuran' => 'text-3xl'])
             <span class="flex flex-col leading-none">
-                <span class="font-headline text-lg font-bold uppercase tracking-wider text-secondary">GameBox</span>
-                <span class="mt-1 font-headline text-[11px] font-semibold uppercase tracking-widest text-outline">PlayStation Rental</span>
+                <span class="font-headline text-lg font-bold uppercase tracking-wider text-secondary">{{ $situs['nama_situs'] }}</span>
+                @if ($situs['tagline'] !== '')
+                    <span class="mt-1 font-headline text-[11px] font-semibold uppercase tracking-widest text-outline">{{ \Illuminate\Support\Str::limit($situs['tagline'], 30) }}</span>
+                @endif
             </span>
         </a>
 
