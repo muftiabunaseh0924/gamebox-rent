@@ -4,7 +4,10 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\DeliveryController;
 use App\Http\Controllers\Admin\FleetController;
 use App\Http\Controllers\Admin\HandoverController;
+use App\Http\Controllers\Admin\HolidayController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\PackageController;
+use App\Http\Controllers\Admin\UnitController;
 use App\Http\Controllers\Auth\AdminAuthController;
 use App\Http\Controllers\Auth\CustomerAuthController;
 use App\Http\Controllers\BookingController;
@@ -76,5 +79,24 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // L9: pelacakan pengantaran
         Route::get('/pengiriman', [DeliveryController::class, 'index'])->name('pengiriman');
         Route::post('/pengiriman/{booking}/ubah', [DeliveryController::class, 'ubah'])->middleware('throttle:60,1')->name('pengiriman.ubah');
+
+        // L10b: perangkat
+        Route::get('/perangkat', [UnitController::class, 'index'])->name('perangkat');
+        Route::get('/perangkat/tambah', [UnitController::class, 'create'])->name('perangkat.tambah');
+        Route::post('/perangkat', [UnitController::class, 'store'])->name('perangkat.simpan');
+        Route::get('/perangkat/{console}/ubah', [UnitController::class, 'edit'])->name('perangkat.ubah');
+        Route::post('/perangkat/{console}', [UnitController::class, 'update'])->name('perangkat.perbarui');
+        Route::post('/perangkat/{console}/hapus', [UnitController::class, 'destroy'])->name('perangkat.hapus');
+
+        // L10b: harga paket
+        Route::get('/harga', [PackageController::class, 'index'])->name('harga');
+        Route::post('/harga', [PackageController::class, 'store'])->name('harga.tambah');
+        Route::post('/harga/{package}', [PackageController::class, 'update'])->name('harga.perbarui');
+        Route::post('/harga/{package}/hapus', [PackageController::class, 'destroy'])->name('harga.hapus');
+
+        // L10b: tanggal libur
+        Route::get('/libur', [HolidayController::class, 'index'])->name('libur');
+        Route::post('/libur', [HolidayController::class, 'store'])->name('libur.tambah');
+        Route::post('/libur/{id}/hapus', [HolidayController::class, 'destroy'])->whereNumber('id')->name('libur.hapus');
     });
 });

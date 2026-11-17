@@ -10,7 +10,6 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 class BookingService
 {
@@ -75,7 +74,7 @@ class BookingService
             if ($mulai->gt(now()->addDays($cfg['maks_hari'])->endOfDay())) {
                 throw new BookingException('tanggal', "Booking maksimal {$cfg['maks_hari']} hari ke depan.");
             }
-            if ($this->tanggalDiblokir($mulai)) {
+            if ($this->tanggalDiblokir($console->id, $mulai)) {
                 throw new BookingException('tanggal', 'Tanggal tersebut tidak tersedia untuk penyewaan.');
             }
 
@@ -166,7 +165,7 @@ class BookingService
                 $alasan = 'Lewat';
             } elseif ($mulai->gt(now()->addDays($cfg['maks_hari'])->endOfDay())) {
                 $alasan = 'Di luar batas';
-            } elseif ($this->tanggalDiblokir($mulai)) {
+            } elseif ($this->tanggalDiblokir($console->id, $mulai)) {
                 $alasan = 'Libur';
             } elseif ($this->adaBentrok($console->id, $mulai, $selesai, $cfg['buffer_jam'])) {
                 $alasan = 'Terisi';
@@ -202,19 +201,13 @@ class BookingService
         });
     }
 
-    private function tanggalDiblokir(Carbon $mulai): bool
+    /** Tanggal libur: console_id kosong = semua unit, terisi = hanya unit itu. */
+    private function tanggalDiblokir(int $consoleId, Carbon $mulai): bool
     {
-        if (! Schema::hasTable('blocked_dates')) {
-            return false;
-        }
-
-        foreach (['tanggal', 'tanggal_blokir', 'tgl'] as $kolom) {
-            if (Schema::hasColumn('blocked_dates', $kolom)) {
-                return DB::table('blocked_dates')->whereDate($kolom, $mulai->toDateString())->exists();
-            }
-        }
-
-        return false; // kolom belum dikenali: pengecekan dilewati
+        return DB::table('blocked_dates')
+            ->whereDate('tanggal', $mulai->toDateString())
+            ->where(fn ($q) => $q->whereNull('console_id')->orWhere('console_id', $consoleId))
+            ->exists();
     }
 
     private function kodeBooking(int $panjang): string

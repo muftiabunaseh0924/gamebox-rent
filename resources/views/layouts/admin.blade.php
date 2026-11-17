@@ -4,8 +4,8 @@
     @include('partials.head')
 </head>
 <body class="min-h-screen">
-    <aside class="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-surface-variant/40 bg-surface-container-lowest md:flex">
-        <div class="flex h-20 items-center gap-3 border-b border-surface-variant/40 px-6">
+    <aside class="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col overflow-y-auto border-r border-surface-variant/40 bg-surface-container-lowest md:flex">
+        <div class="flex h-20 shrink-0 items-center gap-3 border-b border-surface-variant/40 px-6">
             <span class="material-symbols-outlined text-3xl text-secondary">admin_panel_settings</span>
             <span class="flex flex-col leading-none">
                 <span class="font-headline text-lg font-bold uppercase tracking-wider text-secondary">GameBox</span>
@@ -20,6 +20,9 @@
                 ['admin.konfirmasi*', 'admin.konfirmasi', 'pin', 'Konfirmasi Kode'],
                 ['admin.pengiriman*', 'admin.pengiriman', 'local_shipping', 'Pengiriman'],
                 ['admin.armada*', 'admin.armada', 'videogame_asset', 'Jadwal & Lokasi'],
+                ['admin.perangkat*', 'admin.perangkat', 'sports_esports', 'Perangkat'],
+                ['admin.harga*', 'admin.harga', 'sell', 'Harga Paket'],
+                ['admin.libur*', 'admin.libur', 'event_busy', 'Tanggal Libur'],
             ];
             $menuNanti = [['payments', 'Laporan'], ['tune', 'Pengaturan']];
         @endphp
@@ -39,7 +42,7 @@
             @endforeach
         </nav>
 
-        <form method="POST" action="{{ route('admin.logout') }}" class="border-t border-surface-variant/40 p-4">
+        <form method="POST" action="{{ route('admin.logout') }}" class="shrink-0 border-t border-surface-variant/40 p-4">
             @csrf
             <button type="submit" class="btn-secondary w-full">
                 <span class="material-symbols-outlined text-[20px]">logout</span> Keluar
@@ -48,15 +51,13 @@
     </aside>
 
     <div class="md:pl-64">
-        <header class="flex h-20 items-center justify-between border-b border-surface-variant/40 bg-surface-container-lowest/80 px-4 backdrop-blur-xl md:px-8">
-            <h1 class="font-headline text-xl font-bold">@yield('heading', 'Dasbor')</h1>
-            <div class="flex items-center gap-3">
-                <nav class="flex gap-2 md:hidden">
-                    <a href="{{ route('admin.dashboard') }}" class="btn-secondary !px-3 !py-2" aria-label="Dasbor"><span class="material-symbols-outlined text-[18px]">dashboard</span></a>
-                    <a href="{{ route('admin.pesanan') }}" class="btn-secondary !px-3 !py-2" aria-label="Pesanan"><span class="material-symbols-outlined text-[18px]">receipt_long</span></a>
-                    <a href="{{ route('admin.konfirmasi') }}" class="btn-secondary !px-3 !py-2" aria-label="Konfirmasi Kode"><span class="material-symbols-outlined text-[18px]">pin</span></a>
-                    <a href="{{ route('admin.pengiriman') }}" class="btn-secondary !px-3 !py-2" aria-label="Pengiriman"><span class="material-symbols-outlined text-[18px]">local_shipping</span></a>
-                    <a href="{{ route('admin.armada') }}" class="btn-secondary !px-3 !py-2" aria-label="Jadwal dan Lokasi"><span class="material-symbols-outlined text-[18px]">videogame_asset</span></a>
+        <header class="flex h-20 items-center justify-between gap-3 border-b border-surface-variant/40 bg-surface-container-lowest/80 px-4 backdrop-blur-xl md:px-8">
+            <h1 class="shrink-0 font-headline text-xl font-bold">@yield('heading', 'Dasbor')</h1>
+            <div class="flex min-w-0 items-center gap-3">
+                <nav class="flex gap-2 overflow-x-auto md:hidden">
+                    @foreach ($menu as [$pola, $rute, $ikon, $label])
+                        <a href="{{ route($rute) }}" class="btn-secondary !px-3 !py-2" aria-label="{{ $label }}"><span class="material-symbols-outlined text-[18px]">{{ $ikon }}</span></a>
+                    @endforeach
                 </nav>
                 <span class="hidden text-sm text-on-surface-variant sm:inline">{{ auth()->user()->name }}</span>
                 <form method="POST" action="{{ route('admin.logout') }}" class="md:hidden">

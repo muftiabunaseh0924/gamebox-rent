@@ -13,7 +13,7 @@ class HomeController extends Controller
     {
         $konten = DB::table('contents')->pluck('value', 'key');
 
-        $unit = Console::urut()->get();
+        $unit = Console::urut()->where('status', '<>', 'Nonaktif')->get();
 
         $paket = Package::aktif()
             ->orderBy('jenis')
