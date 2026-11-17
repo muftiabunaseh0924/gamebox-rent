@@ -20,7 +20,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Pembayaran-Midtrans_Sandbox-0A4DA2?style=flat-square" alt="Midtrans Sandbox">
-  <img src="https://img.shields.io/badge/Status-L10a_selesai,_L10b_berikutnya-2F6BFF?style=flat-square" alt="Status pengembangan">
+  <img src="https://img.shields.io/badge/Status-L10b_selesai,_L10c_berikutnya-2F6BFF?style=flat-square" alt="Status pengembangan">
   <img src="https://img.shields.io/badge/Platform-Windows_%2B_Laragon-5DE6FF?style=flat-square" alt="Windows dan Laragon">
 </p>
 
@@ -49,13 +49,14 @@ Sistem rental **PlayStation 4 & 5** berbasis web. Pelanggan memilih unit, jadwal
 - Log aktivitas admin dan riwayat perpindahan unit
 - Dasbor admin dengan KPI (pemasukan, transaksi, rata-rata order, armada, keterlambatan dan denda berjalan), grafik pemasukan harian, dan proporsi PS5 vs PS4
 - Manajemen pesanan admin: daftar dengan filter dan pencarian, detail lengkap, unduh invoice, dan pembatalan pesanan dengan alasan (jadwal dilepas, pelanggan diberi tahu lewat email)
+- Pengelolaan perangkat (tambah, ubah, nonaktifkan, hapus, unggah foto yang tampil di katalog), harga paket per jenis dan durasi, serta tanggal libur (semua unit atau satu unit) yang menutup booking baru
 - Pelacakan pengantaran untuk pesanan Diantar: status berurutan (kurir ditugaskan, dalam perjalanan, diterima, gagal), linimasa yang dilihat pelanggan, dan penerimaan unit yang diverifikasi dengan kode konfirmasi
 
 **Dalam pengembangan**
 
 - Webhook Midtrans untuk notifikasi pembayaran otomatis (butuh alamat publik; di lokal memakai tombol cek status)
 - Notifikasi email lanjutan (pengingat mulai dan selesai sewa)
-- Panel admin lanjutan: pengelolaan perangkat dan foto, harga paket, tanggal libur, pengaturan sistem, konten, templat email, pelanggan, dan log aktivitas
+- Panel admin lanjutan: pengaturan sistem, konten beranda, templat email, pelanggan, dan log aktivitas
 - Laporan keuangan dengan ekspor PDF dan Excel
 - Pembatalan otomatis dan pengingat lewat scheduler
 
@@ -116,7 +117,7 @@ app/
   Http/Middleware/         EnsureRole (pembatas akses pelanggan/admin)
   Http/Requests/           Validasi form booking
   Models/                  User, Console, Package, Booking, Payment, Delivery, DeliveryEvent
-  Http/Controllers/Admin/  Dasbor, pesanan, konfirmasi kode (serah terima), armada, pengiriman
+  Http/Controllers/Admin/  Dasbor, pesanan, konfirmasi kode (serah terima), armada, pengiriman, perangkat, harga, tanggal libur
   Services/                BookingService, PaymentService (Midtrans), InvoiceService (PDF), HandoverService (serah terima, denda), DeliveryService (pengantaran), DashboardService (KPI), CancelService (pembatalan), NotifikasiService + EmailTemplateService (email)
   Mail/                    Email pembayaran berhasil (lampiran invoice)
 database/
@@ -151,8 +152,8 @@ routes/web.php             Seluruh route
 | L8 | Admin: konfirmasi kode dan serah terima | Selesai |
 | L9 | Pelacakan pengantaran | Selesai |
 | L10a | Admin: dasbor KPI dan manajemen pesanan | Selesai |
-| L10b | Admin: perangkat dan foto, harga paket, tanggal libur | Berikutnya |
-| L10c | Admin: pengaturan sistem, konten, templat email | Direncanakan |
+| L10b | Admin: perangkat dan foto, harga paket, tanggal libur | Selesai |
+| L10c | Admin: pengaturan sistem, konten, templat email | Berikutnya |
 | L10d | Admin: pelanggan dan log aktivitas | Direncanakan |
 | L11 | Laporan keuangan dan ekspor | Direncanakan |
 | L12 | Scheduler (batal otomatis, pengingat) | Direncanakan |

@@ -4,7 +4,7 @@ Pemindahan proyek **GameBox Rent** dari Google Apps Script + Google Sheets ke **
 
 Proyek lama (Apps Script, Langkah 1 sampai 6 selesai dan lolos tes) **tetap disimpan sebagai acuan** aturan bisnis, daftar tes, dan desain. Jangan dihapus.
 
-**Posisi sekarang: L1 sampai L10a selesai dan lolos tes. Berikutnya L10b (perangkat, harga, tanggal libur); L10 dibagi menjadi L10a, L10b, L10c, L10d.**
+**Posisi sekarang: L1 sampai L10b selesai dan lolos tes. Berikutnya L10c (pengaturan sistem, konten beranda, templat email); L10 dibagi menjadi L10a sampai L10d.**
 
 ---
 
@@ -37,7 +37,7 @@ Proyek lama (Apps Script, Langkah 1 sampai 6 selesai dan lolos tes) **tetap disi
 | L7 | Invoice PDF + email (DomPDF + Laravel Mail) | **Selesai, lolos semua tes** (bagian 10.10) |
 | L8 | Admin: konfirmasi kode, serah terima, tandai selesai, lokasi konsol | **Selesai, lolos semua tes** (bagian 10.11) |
 | L9 | Pelacakan kurir (berbasis status) | **Selesai, lolos semua tes** (bagian 10.12) |
-| **L10** | Admin: dashboard, pesanan, jadwal, perangkat, harga, pengaturan, pelanggan, log. Dibagi: **L10a** dasbor KPI + manajemen pesanan (**selesai**, bagian 10.13); **L10b** perangkat + foto, harga paket, tanggal libur; **L10c** pengaturan sistem, konten beranda, templat email; **L10d** pelanggan + log aktivitas | **Berikutnya: L10b** (bagian 10.14) |
+| **L10** | Admin: dashboard, pesanan, jadwal, perangkat, harga, pengaturan, pelanggan, log. Dibagi: **L10a** dasbor KPI + manajemen pesanan (**selesai**, bagian 10.13); **L10b** perangkat + foto, harga paket, tanggal libur (**selesai**, bagian 10.14); **L10c** pengaturan sistem, konten beranda, templat email; **L10d** pelanggan + log aktivitas | **Berikutnya: L10c** (bagian 10.15) |
 | L11 | Laporan keuangan + ekspor PDF dan Excel | Belum |
 | L12 | Scheduler (batal otomatis, pengingat email) | Belum |
 | L13 | Pengujian (kriteria penerimaan PRD) + deploy | Belum |
@@ -212,6 +212,7 @@ Riwayat saat ini:
 | `6956e8d` | `L8: admin serah terima` |
 | (L9) | `L9: pelacakan pengantaran` |
 | (L10a) | `L10a: dasbor dan manajemen pesanan` |
+| (L10b) | `L10b: perangkat, harga, tanggal libur` |
 
 Format commit tiap langkah: `Lx: ringkasan`. Sebelum `git add .`, cek `git status` dan pastikan `.env` tidak muncul (sudah ada di `.gitignore` bawaan).
 
@@ -268,7 +269,7 @@ PATH PHP saat ini: `D:\laragon\bin\php\php-8.3.36-Win32-vs16-x64`.
 
 ---
 
-## 10. Status L3 sampai L10a (selesai) dan rancangan L10b
+## 10. Status L3 sampai L10b (selesai) dan rancangan L10c
 
 ### 10.1 Keputusan L3 yang dipakai
 
@@ -625,38 +626,77 @@ PATH PHP saat ini: `D:\laragon\bin\php\php-8.3.36-Win32-vs16-x64`.
 - Untuk menguji keterlambatan, geser `waktu_selesai` pesanan `Sedang Disewa` lewat `php artisan tinker --execute="App\Models\Booking::where('kode_booking','KODE')->update(['waktu_selesai'=>now()->subMinutes(90)]);"`, lalu selesaikan lewat **Jadwal & Lokasi**, **Tandai Selesai**.
 - Menu Pengaturan dan Laporan di sidebar masih "Segera" (L10c dan L11).
 
-### 10.14 Rancangan L10b: perangkat, harga paket, tanggal libur (untuk dikonfirmasi di awal L10b)
+### 10.14 Status L10b (selesai): perangkat, harga paket, tanggal libur
 
-L10 dipecah menjadi empat bagian agar tiap bagian bisa dites dan di-commit sendiri: L10a selesai; **L10b** perangkat + foto, harga paket, tanggal libur; **L10c** pengaturan sistem, konten beranda, templat email; **L10d** pelanggan dan log aktivitas.
+**Keputusan yang dipakai:** foto unit diunggah dari komputer (JPG, PNG, WEBP, maksimal 2 MB) dan disimpan di `storage/app/public/unit`; unit yang pernah punya pesanan hanya bisa dinonaktifkan, unit yang belum pernah dipakai boleh dihapus; tiga menu terpisah (Perangkat, Harga Paket, Tanggal Libur). Tidak ada migrasi baru.
 
-**Isi L10b:**
-- **Perangkat:** daftar unit (kode, jenis, nama, status, lokasi), tambah dan ubah unit (kode unik, jenis PS4/PS5, nama tampil, tag, deskripsi, daftar game, status `Tersedia`/`Perawatan`/`Nonaktif`); **unggah foto** (jpg, png, webp, maksimal 2 MB) disimpan di `storage/app/public` dan ditampilkan lewat `php artisan storage:link` (menggantikan placeholder di katalog beranda); unit yang sedang `Disewa` tidak bisa diubah statusnya atau dinonaktifkan.
-- **Harga paket:** daftar paket per jenis (durasi, harga, aktif), tambah, ubah harga, aktif/nonaktifkan; kombinasi jenis dan durasi unik. Harga lama pada pesanan yang sudah ada tidak berubah (harga disalin ke booking saat dibuat).
-- **Tanggal libur:** tambah dan hapus tanggal di `blocked_dates` (kolom `tanggal`, `console_id` kosong berarti semua unit, `alasan`); sudah dibaca oleh `BookingService` sejak L5.
-- Menu sidebar: **Perangkat**, **Harga**, **Tanggal Libur** (atau satu menu "Katalog" dengan tab). Semua aksi tercatat di `activity_logs`.
+**Setup:** tautan penyimpanan `public/storage` (perintah `php artisan storage:link`; bila gagal di Windows karena hak akses, pakai `New-Item -ItemType Junction -Path public\storage -Target storage\app\public`). Foto yang diunggah **tidak ikut Git** (`/public/storage` dan `storage/app/public` diabaikan); unggah ulang bila proyek dipindah ke komputer lain.
 
-**Pertanyaan yang dikonfirmasi di awal L10b:**
-1. **Foto unit:** unggah berkas (usulan, perlu `storage:link`) atau cukup menempel alamat gambar (URL)?
-2. **Menghapus unit:** unit yang pernah punya booking hanya bisa **dinonaktifkan** (usulan), dan unit tanpa booking boleh dihapus; atau tidak ada penghapusan sama sekali?
-3. **Tata letak menu:** tiga menu terpisah (Perangkat, Harga, Tanggal Libur) atau satu menu "Katalog" dengan tab (usulan: tiga menu terpisah, lebih sederhana)?
+**Berkas L10b:**
 
-**Yang dibutuhkan di awal L10b (kirim outputnya):**
+| Berkas | Lokasi | Catatan |
+|---|---|---|
+| `ActivityLogger.php` | `app/Services/` | Baru. `ActivityLogger::catat($admin, $aksi, $detail)` untuk log aktivitas |
+| `BookingService.php` | `app/Services/` | Diubah: tanggal libur kini membaca kolom `tanggal` dan menghormati `console_id` (kosong = semua unit, terisi = satu unit) |
+| `HomeController.php` | `app/Http/Controllers/` | Diubah: unit `Nonaktif` disembunyikan dari beranda |
+| `UnitController.php` | `app/Http/Controllers/Admin/` | Baru: daftar, tambah, ubah, hapus unit, unggah dan hapus foto |
+| `PackageController.php` | `app/Http/Controllers/Admin/` | Baru: tambah paket, ubah harga dan status aktif, hapus |
+| `HolidayController.php` | `app/Http/Controllers/Admin/` | Baru: tambah dan hapus tanggal libur |
+| `web.php` | `routes/` | Diubah (tabel di bawah) |
+| `admin.blade.php` | `resources/views/layouts/` | Diubah: menu Perangkat, Harga Paket, Tanggal Libur; sidebar bisa digulir |
+| `index.blade.php`, `form.blade.php` | `resources/views/admin/perangkat/` | Baru |
+| `index.blade.php` | `resources/views/admin/harga/` | Baru |
+| `index.blade.php` | `resources/views/admin/libur/` | Baru |
+
+**Route L10b (semua `auth` + `role:admin`):**
+
+| URL | Nama | Fungsi |
+|---|---|---|
+| `GET /admin/perangkat` | `admin.perangkat` | Daftar unit |
+| `GET /admin/perangkat/tambah`, `POST /admin/perangkat` | `admin.perangkat.tambah`, `.simpan` | Tambah unit |
+| `GET /admin/perangkat/{id}/ubah`, `POST /admin/perangkat/{id}` | `admin.perangkat.ubah`, `.perbarui` | Ubah unit |
+| `POST /admin/perangkat/{id}/hapus` | `admin.perangkat.hapus` | Hapus unit |
+| `GET /admin/harga`, `POST /admin/harga` | `admin.harga`, `.tambah` | Daftar dan tambah paket |
+| `POST /admin/harga/{id}`, `POST /admin/harga/{id}/hapus` | `admin.harga.perbarui`, `.hapus` | Ubah harga atau aktif, hapus |
+| `GET /admin/libur`, `POST /admin/libur` | `admin.libur`, `.tambah` | Daftar dan tambah tanggal libur |
+| `POST /admin/libur/{id}/hapus` | `admin.libur.hapus` | Hapus tanggal libur |
+
+**Aturan penting:**
+- **Unit:** kode unit unik, huruf besar, angka, dan tanda hubung (3 sampai 20 karakter, otomatis huruf besar); jenis dan status **terkunci** saat unit `Disewa`; jenis tidak bisa diubah bila unit sudah punya pesanan; status tidak bisa diubah ke `Perawatan` atau `Nonaktif` bila masih ada pesanan aktif atau mendatang (`Dibayar`, atau `Menunggu Pembayaran` yang belum kedaluwarsa); hapus hanya untuk unit tanpa pesanan dan tidak sedang disewa (tanggal libur unit itu dan berkas fotonya ikut dihapus; hanya berkas di folder `unit/` yang dihapus). Unit `Perawatan` tampil di katalog tetapi tidak bisa dibooking; unit `Nonaktif` disembunyikan.
+- **Paket:** kombinasi jenis dan durasi unik; durasi 1 sampai 48 jam; harga Rp1.000 sampai Rp10.000.000; setiap jenis wajib punya minimal satu paket aktif (paket aktif terakhir tidak bisa dinonaktifkan atau dihapus); perubahan harga hanya berlaku untuk booking baru karena harga disalin ke setiap pesanan.
+- **Tanggal libur:** tidak boleh sebelum hari ini; kombinasi tanggal dan unit unik; menutup **booking baru** (jam tampil "Libur" di form booking) dan tidak membatalkan pesanan yang sudah ada (admin diberi peringatan jumlah pesanan terdampak).
+- Semua aksi tercatat di `activity_logs`: `unit_tambah`, `unit_ubah`, `unit_hapus`, `paket_tambah`, `paket_ubah`, `paket_hapus`, `libur_tambah`, `libur_hapus`.
+
+**Hasil tes (21 skenario, semua lolos):** menu aktif; daftar unit tanpa tombol Hapus untuk unit yang pernah dipakai; kode ganda ditolak; tambah unit dengan foto; foto tidak valid atau terlalu besar ditolak; unit baru tampil di beranda; status Perawatan dan Nonaktif tampil sesuai aturan di beranda dan form booking; unit `Disewa` terkunci; perubahan status ditolak bila ada pesanan aktif; hapus unit ikut menghapus fotonya; perubahan harga memperbarui "mulai dari" dan form booking tanpa mengubah pesanan lama; paket ganda dan nonaktifkan paket terakhir ditolak; tanggal libur menutup jam booking (semua unit atau satu unit), peringatan pesanan terdampak, dan duplikat ditolak; pelanggan yang membuka alamat admin mendapat 403; log aktivitas lengkap.
+
+**Catatan:**
+- Setelah menguji, kembalikan data uji (harga paket, paket tambahan, tanggal libur) lewat halamannya masing-masing.
+- Menu Laporan dan Pengaturan di sidebar masih "Segera" (L11 dan L10c).
+
+### 10.15 Rancangan L10c: pengaturan sistem, konten beranda, templat email (untuk dikonfirmasi di awal L10c)
+
+**Isi L10c:**
+- **Pengaturan sistem** (`settings`, pasangan `key` dan `value`): halaman berkelompok dengan validasi per kunci. Operasional: `buffer_jam`, `batas_bayar_menit`, `toleransi_ambil_menit`, `maks_hari_ke_depan`, `maks_booking_menunggu`, `jam_mulai_slot` (daftar jam 0 sampai 23). Harga: `harga_stik`, `denda_keterlambatan`, `stok_stik`, `biaya_pengiriman`, `pengiriman_aktif`, `deposit`. Identitas: `nama_situs`, `tagline`, `kontak`, `alamat`, `logo_url`, `prefix_invoice`, `panjang_kode`. Perubahan hanya berlaku untuk booking baru (nilai sudah disalin ke setiap pesanan). Kunci yang belum dipakai kode (mis. `deposit`) ditandai.
+- **Konten beranda** (`contents`): judul, deskripsi, badge, poin hero, cara menyewa, kelengkapan standar, operasional, dan teks catatan, dengan editor yang ramah (daftar pasangan Judul dan Isi yang bisa ditambah dan dihapus), tanpa harus mengetik format `Judul::Isi|Judul::Isi`.
+- **Templat email** (`email_templates`: `jenis_email`, `subjek`, `isi`): ubah subjek dan isi dengan daftar placeholder yang tersedia per jenis, pratinjau, dan **kirim uji** ke email admin (tercatat di log karena `MAIL_MAILER=log`).
+- Semua perubahan tercatat di `activity_logs`.
+
+**Pertanyaan yang dikonfirmasi di awal L10c:**
+1. **Branding** (`warna_*`, `font_*`, `logo_url`): hanya `nama_situs`, `tagline`, `kontak`, `alamat`, dan logo yang diterapkan ke tampilan (usulan), sedangkan warna dan font tetap dari tema Stitch, atau warna dan font juga diterapkan?
+2. **Editor konten beranda:** formulir terstruktur dengan baris yang bisa ditambah dan dihapus (usulan), atau kotak teks mentah dengan format `Judul::Isi|...`?
+3. **Templat email:** ada pratinjau dan tombol **kirim uji** ke email admin (usulan), atau cukup mengedit subjek dan isi?
+
+**Yang dibutuhkan di awal L10c (kirim outputnya):**
 
 ```powershell
-Test-Path public\storage
+mysql -u root gamebox_rent -e "DESCRIBE settings;"
 ```
 
 ```powershell
-mysql -u root gamebox_rent -e "SELECT kode_unit, jenis, status, foto FROM consoles;"
+mysql -u root gamebox_rent -e "DESCRIBE contents;"
 ```
 
-```powershell
-mysql -u root gamebox_rent -e "SELECT jenis, COUNT(*) AS jumlah_paket FROM packages GROUP BY jenis;"
-```
-
-`Test-Path public\storage` menunjukkan apakah tautan penyimpanan sudah dibuat; bila `False`, `php artisan storage:link` akan dijalankan bersama kode L10b. Di Windows, perintah itu kadang butuh PowerShell dengan hak Administrator atau Developer Mode aktif.
-
-**Hasil yang benar di akhir L10b:** unit baru muncul di katalog beranda dengan foto yang diunggah; mengubah harga paket langsung mengubah "mulai dari" di katalog dan form booking; tanggal libur menutup jam booking di tanggal itu; unit `Perawatan` tidak muncul di form booking; semua aksi tercatat di log; commit `L10b: perangkat, harga, tanggal libur`.
+**Hasil yang benar di akhir L10c:** mengubah pengaturan langsung memengaruhi booking baru (mis. buffer atau slot jam) tanpa mengubah pesanan lama; nilai tidak valid ditolak dengan pesan jelas; perubahan konten beranda terlihat di halaman depan; templat email yang diubah terlihat pada email berikutnya; commit `L10c: pengaturan, konten, templat email`.
 
 ---
 
@@ -795,15 +835,21 @@ mysql -u root gamebox_rent -e "SELECT jenis, COUNT(*) AS jumlah_paket FROM packa
 - [x] Tes lolos (KPI cocok dengan database, pembatalan melepas jadwal dan mengirim email)
 - [x] Commit `L10a: dasbor dan manajemen pesanan`
 
-### L10b (berikutnya): perangkat, harga paket, tanggal libur
-- [ ] Output `Test-Path public\storage`, daftar unit, dan jumlah paket per jenis dikirim
-- [ ] Keputusan: foto unggah atau URL, aturan hapus unit, tata letak menu
-- [ ] CRUD perangkat dengan unggah foto (`storage:link`), harga paket, tanggal libur; semua aksi tercatat di log
-- [ ] Commit `L10b: perangkat, harga, tanggal libur`
+### L10b
+- [x] Output `Test-Path public\storage`, daftar unit, dan jumlah paket per jenis dikirim
+- [x] Keputusan: foto unggah, hapus unit hanya bila belum pernah dipakai, tiga menu terpisah
+- [x] `storage:link`; CRUD perangkat dengan unggah foto, harga paket, tanggal libur (menghormati `console_id`); log aktivitas
+- [x] 21 tes lolos
+- [x] Commit `L10b: perangkat, harga, tanggal libur`
 
-### L10c dan L10d (setelah L10b)
-- [ ] L10c: pengaturan sistem (`settings`), konten beranda (`contents`), templat email (`email_templates`)
-- [ ] L10d: pelanggan (ubah status) dan log aktivitas
+### L10c (berikutnya): pengaturan sistem, konten beranda, templat email
+- [ ] Output `DESCRIBE settings` dan `DESCRIBE contents` dikirim
+- [ ] Keputusan: branding yang diterapkan, editor konten, pratinjau dan kirim uji email
+- [ ] Halaman Pengaturan (validasi per kunci), editor konten beranda, editor templat email; log aktivitas
+- [ ] Commit `L10c: pengaturan, konten, templat email`
+
+### L10d (setelah L10c)
+- [ ] Pelanggan (cari, riwayat pesanan, ubah status Aktif/Nonaktif) dan log aktivitas (filter aksi dan tanggal)
 
 ---
 
@@ -811,8 +857,8 @@ mysql -u root gamebox_rent -e "SELECT jenis, COUNT(*) AS jumlah_paket FROM packa
 
 1. Selesaikan checklist langkah yang sedang berjalan.
 2. Kirim bukti: output perintah cek atau screenshot halaman.
-3. Tulis **"lanjut L10b"** (atau langkah berikutnya).
+3. Tulis **"lanjut L10c"** (atau langkah berikutnya).
 
 Jika memulai percakapan baru, lampirkan README ini + `PRD_GameBox_Rent.pdf` + README dan zip proyek Apps Script lama (acuan aturan bisnis dan tes) + `stitch_prd_visual_interface_prototype.zip`, lalu tulis:
 
-> Saya memindahkan proyek GameBox Rent dari Google Apps Script ke Laravel 13.40 (PHP 8.3, Blade + Tailwind + MySQL via Laragon di Windows, pembayaran Midtrans sandbox). L1, L2 (migrasi database + seeder), L3 (layout, login pelanggan dan admin terpisah, role + middleware), L4 (beranda dan katalog unit), L5 (booking: jadwal, bentrok + buffer, harga dihitung server), dan L6 (pembayaran Midtrans sandbox: popup Snap, cek status, kode konfirmasi, riwayat pesanan) L7 (invoice PDF dan email konfirmasi pembayaran), L8 (admin konfirmasi kode, serah terima, tandai selesai, armada), L9 (pelacakan pengantaran), dan L10a (dasbor admin KPI dan manajemen pesanan) sudah selesai, lolos tes, dan di-commit. Baca README_Laravel.md. Lanjutkan dari **L10b: admin perangkat (CRUD + unggah foto), harga paket, dan tanggal libur**, step by step, beri kode dan README per langkah (jangan zip), jalankan satu perintah per baris, dan sebutkan file mana yang dibuat baru atau diubah.
+> Saya memindahkan proyek GameBox Rent dari Google Apps Script ke Laravel 13.40 (PHP 8.3, Blade + Tailwind + MySQL via Laragon di Windows, pembayaran Midtrans sandbox). L1, L2 (migrasi database + seeder), L3 (layout, login pelanggan dan admin terpisah, role + middleware), L4 (beranda dan katalog unit), L5 (booking: jadwal, bentrok + buffer, harga dihitung server), dan L6 (pembayaran Midtrans sandbox: popup Snap, cek status, kode konfirmasi, riwayat pesanan) L7 (invoice PDF dan email konfirmasi pembayaran), L8 (admin konfirmasi kode, serah terima, tandai selesai, armada), L9 (pelacakan pengantaran), dan L10a (dasbor admin KPI dan manajemen pesanan), dan L10b (admin perangkat dengan foto, harga paket, tanggal libur) sudah selesai, lolos tes, dan di-commit. Baca README_Laravel.md. Lanjutkan dari **L10c: admin pengaturan sistem, konten beranda, dan templat email**, step by step, beri kode dan README per langkah (jangan zip), jalankan satu perintah per baris, dan sebutkan file mana yang dibuat baru atau diubah.
