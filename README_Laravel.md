@@ -4,7 +4,7 @@ Pemindahan proyek **GameBox Rent** dari Google Apps Script + Google Sheets ke **
 
 Proyek lama (Apps Script, Langkah 1 sampai 6 selesai dan lolos tes) **tetap disimpan sebagai acuan** aturan bisnis, daftar tes, dan desain. Jangan dihapus.
 
-**Posisi sekarang: L1 sampai L9 selesai dan lolos tes. Berikutnya L10 (dikerjakan bertahap: L10a, L10b, L10c).**
+**Posisi sekarang: L1 sampai L10a selesai dan lolos tes. Berikutnya L10b (perangkat, harga, tanggal libur); L10 dibagi menjadi L10a, L10b, L10c, L10d.**
 
 ---
 
@@ -37,7 +37,7 @@ Proyek lama (Apps Script, Langkah 1 sampai 6 selesai dan lolos tes) **tetap disi
 | L7 | Invoice PDF + email (DomPDF + Laravel Mail) | **Selesai, lolos semua tes** (bagian 10.10) |
 | L8 | Admin: konfirmasi kode, serah terima, tandai selesai, lokasi konsol | **Selesai, lolos semua tes** (bagian 10.11) |
 | L9 | Pelacakan kurir (berbasis status) | **Selesai, lolos semua tes** (bagian 10.12) |
-| **L10** | Admin: dashboard, pesanan, jadwal, perangkat, harga, pengaturan, pelanggan, log. Dibagi: **L10a** dasbor KPI + manajemen pesanan; **L10b** perangkat, harga, pengaturan, tanggal libur; **L10c** pelanggan + log aktivitas | **Berikutnya: L10a** (bagian 10.13) |
+| **L10** | Admin: dashboard, pesanan, jadwal, perangkat, harga, pengaturan, pelanggan, log. Dibagi: **L10a** dasbor KPI + manajemen pesanan (**selesai**, bagian 10.13); **L10b** perangkat + foto, harga paket, tanggal libur; **L10c** pengaturan sistem, konten beranda, templat email; **L10d** pelanggan + log aktivitas | **Berikutnya: L10b** (bagian 10.14) |
 | L11 | Laporan keuangan + ekspor PDF dan Excel | Belum |
 | L12 | Scheduler (batal otomatis, pengingat email) | Belum |
 | L13 | Pengujian (kriteria penerimaan PRD) + deploy | Belum |
@@ -211,6 +211,7 @@ Riwayat saat ini:
 | `b29a3b7` | `L7: invoice dan email` |
 | `6956e8d` | `L8: admin serah terima` |
 | (L9) | `L9: pelacakan pengantaran` |
+| (L10a) | `L10a: dasbor dan manajemen pesanan` |
 
 Format commit tiap langkah: `Lx: ringkasan`. Sebelum `git add .`, cek `git status` dan pastikan `.env` tidak muncul (sudah ada di `.gitignore` bawaan).
 
@@ -267,7 +268,7 @@ PATH PHP saat ini: `D:\laragon\bin\php\php-8.3.36-Win32-vs16-x64`.
 
 ---
 
-## 10. Status L3 sampai L9 (selesai) dan rancangan L10
+## 10. Status L3 sampai L10a (selesai) dan rancangan L10b
 
 ### 10.1 Keputusan L3 yang dipakai
 
@@ -580,35 +581,82 @@ PATH PHP saat ini: `D:\laragon\bin\php\php-8.3.36-Win32-vs16-x64`.
 - Edit parsial di `PaymentService.php` sempat membuat blok `forceFill` dan `return true` ganda. Untuk berkas yang berubah banyak, lebih aman menimpa seluruh berkas daripada menyisipkan potongan.
 - Di PowerShell, gunakan kutip ganda di luar dan kutip tunggal di dalam untuk `mysql -e`: `mysql -u root gamebox_rent -e "SELECT ... WHERE kode_booking='PS5-XXXX';"`.
 
-### 10.13 Rancangan L10: panel admin lengkap (dikerjakan bertahap)
+### 10.13 Status L10a (selesai): dasbor KPI dan manajemen pesanan
 
-L10 besar, jadi dipecah menjadi tiga bagian agar tiap bagian bisa dites dan di-commit sendiri. Referensi desain Stitch: `dashboard_admin_kpi_operasional` (menu: Dashboard, Konfirmasi Kode, Manajemen Pesanan, Jadwal & Lokasi Konsol, Laporan Keuangan, Pengaturan Sistem).
+**Keputusan yang dipakai:** periode default dasbor = bulan berjalan (pilihan 7 hari dan 30 hari); grafik dibuat sendiri dengan CSS (tanpa paket tambahan); admin boleh membatalkan pesanan yang belum dibayar **dan** yang sudah dibayar (selama belum serah terima), dengan alasan wajib dan email ke pelanggan; refund dana dilakukan manual di dasbor Midtrans.
 
-**L10a: dasbor KPI dan manajemen pesanan**
-- Dasbor admin (`/admin`): kartu KPI (total pemasukan periode, total transaksi, rata-rata order, konsol aktif/disewa, serah terima hari ini, keterlambatan dan denda berjalan), grafik pemasukan harian, proporsi unit sewa PS5 vs PS4 dan stik tambahan. Data dari `payments` yang `Berhasil`, `bookings`, dan `consoles`. Grafik dibuat dengan CSS/SVG sendiri (tanpa paket tambahan).
-- Manajemen Pesanan: daftar semua pesanan dengan filter status, rentang tanggal, dan pencarian (kode, nama, email), halaman detail admin (pelanggan, jadwal, rincian biaya, pembayaran, pengantaran, log), dan aksi **Batalkan pesanan** dengan alasan (hanya sebelum serah terima; unit dan jadwal dilepas; email templat `dibatalkan`; refund dana dilakukan manual di dasbor Midtrans).
-- Menu sidebar Pesanan menjadi aktif; unduh invoice oleh admin.
+**Migrasi baru:** `bookings.alasan_batal` (string 255) dan `bookings.dibatalkan_at` (timestamp), berkas `*_tambah_pembatalan_ke_bookings.php`.
 
-**L10b: perangkat, harga, pengaturan, tanggal libur**
-- Perangkat: tambah, ubah, nonaktifkan unit (kode, jenis, nama, tag, deskripsi, game, status Perawatan/Nonaktif); unggah foto (`php artisan storage:link`, foto menggantikan placeholder di katalog).
-- Harga paket (`packages`), pengaturan sistem (`settings`: buffer, denda, batas bayar, toleransi, stok stik, slot jam, pengiriman, identitas situs), konten beranda (`contents`), templat email (`email_templates`), tanggal libur (`blocked_dates` dengan kolom `tanggal`, `console_id`, `alasan`).
+**Berkas L10a:**
 
-**L10c: pelanggan dan log**
-- Daftar pelanggan (cari, lihat riwayat pesanan, ubah status `Aktif`/`Nonaktif` yang sudah ditolak di login dan `EnsureRole`), log aktivitas admin (`activity_logs`) dengan filter aksi dan tanggal.
+| Berkas | Lokasi | Catatan |
+|---|---|---|
+| `DashboardService.php` | `app/Services/` | Baru. Menghitung seluruh KPI, grafik harian, proporsi PS5/PS4, stik, armada, serah terima hari ini, keterlambatan |
+| `CancelService.php` | `app/Services/` | Baru. `batalkan()` dalam transaksi |
+| `NotifikasiService.php` | `app/Services/` | Diubah: ditambah `dibatalkan()` (templat `dibatalkan`) |
+| `DashboardController.php` | `app/Http/Controllers/Admin/` | Baru (invokable, parameter `periode`) |
+| `OrderController.php` | `app/Http/Controllers/Admin/` | Baru: `index` (filter dan pencarian), `show`, `batal`, `invoice` |
+| `web.php` | `routes/` | Diubah (tabel di bawah) |
+| `admin.blade.php` | `resources/views/layouts/` | Diubah: menu **Pesanan** aktif (Laporan dan Pengaturan masih "Segera") |
+| `dashboard.blade.php` | `resources/views/admin/` | Diubah: dasbor operasional (menggantikan placeholder) |
+| `index.blade.php`, `show.blade.php` | `resources/views/admin/pesanan/` | Baru |
 
-**Pertanyaan yang dikonfirmasi di awal L10a:**
-1. Periode default dasbor: **bulan berjalan** (usulan) atau 30 hari terakhir?
-2. Grafik: dibuat sendiri dengan CSS/SVG (usulan, tanpa paket) atau memakai Chart.js?
-3. Pembatalan pesanan yang **sudah dibayar** oleh admin: diizinkan sebelum serah terima dengan alasan wajib dan email ke pelanggan (usulan), atau hanya pesanan yang belum dibayar?
+**Route L10a (semua `auth` + `role:admin`):**
 
-**Yang dibutuhkan di awal L10a (kirim outputnya):**
+| URL | Nama | Fungsi |
+|---|---|---|
+| `GET /admin` | `admin.dashboard` | Dasbor KPI (`?periode=7|30|bulan`) |
+| `GET /admin/pesanan` | `admin.pesanan` | Daftar pesanan, filter status, tanggal, penerimaan, pencarian |
+| `GET /admin/pesanan/{kode_booking}` | `admin.pesanan.show` | Detail pesanan |
+| `POST /admin/pesanan/{kode_booking}/batal` | `admin.pesanan.batal` | Batalkan pesanan (throttle 30/menit) |
+| `GET /admin/pesanan/{kode_booking}/invoice` | `admin.pesanan.invoice` | Unduh invoice oleh admin |
+
+**Aturan penting:**
+- **Pemasukan dan transaksi** dihitung dari `payments` berstatus `Berhasil` pada periode (berdasarkan `waktu_bayar`) untuk pesanan yang **tidak Dibatalkan**; rata-rata order = pemasukan dibagi jumlah transaksi.
+- Proporsi PS5 vs PS4 memakai data yang sama; stik tambahan = jumlah dan pendapatan stik pada pesanan yang dihitung.
+- **Keterlambatan:** pesanan `Sedang Disewa` yang `waktu_selesai`-nya lewat; denda berjalan memakai `HandoverService::hitungDenda()` (per jam, dibulatkan ke atas).
+- **Pencarian pesanan:** kode booking, kode konfirmasi (persis), nama, email, atau nomor HP; filter status termasuk `Kedaluwarsa` (menunggu pembayaran yang batas bayarnya lewat).
+- **Pembatalan** hanya untuk status `Menunggu Pembayaran` atau `Dibayar` dan kode konfirmasi **belum dipakai**. Efeknya (satu transaksi): booking `Dibatalkan` dengan `alasan_batal` dan `dibatalkan_at`; percobaan pembayaran yang `Pending` menjadi `Dibatalkan`; catatan pengantaran ditutup (`Dibatalkan`, dengan baris linimasa); jadwal dan unit terlepas (pesanan `Dibatalkan` tidak memegang jadwal); log aktivitas `batal_pesanan`; setelah commit, email templat `dibatalkan` ke pelanggan (ditambah kalimat refund bila sudah dibayar) dan upaya `Transaction::cancel()` ke Midtrans untuk transaksi yang belum dibayar (kegagalan hanya dicatat).
+
+**Hasil tes (semua lolos):** sidebar Pesanan aktif; dasbor menampilkan KPI, grafik, proporsi, dan pintasan; angka pemasukan dan transaksi sama dengan hitungan database; tab periode mengubah data; banner keterlambatan dan denda benar (90 menit menjadi Rp40.000); daftar dan jumlah per status benar; filter dan pencarian bekerja; detail pesanan lengkap; invoice terunduh; alasan terlalu pendek ditolak; pembatalan berhasil dengan email di log, alasan tersimpan, dan baris `batal_pesanan`; pelanggan yang membuka alamat admin mendapat 403.
+
+**Catatan:**
+- Status pengantaran baru `Dibatalkan` tidak muncul di tab mana pun pada halaman Pengiriman (hanya Aktif, Gagal, Selesai); riwayatnya tetap terlihat di detail pesanan admin.
+- Untuk menguji keterlambatan, geser `waktu_selesai` pesanan `Sedang Disewa` lewat `php artisan tinker --execute="App\Models\Booking::where('kode_booking','KODE')->update(['waktu_selesai'=>now()->subMinutes(90)]);"`, lalu selesaikan lewat **Jadwal & Lokasi**, **Tandai Selesai**.
+- Menu Pengaturan dan Laporan di sidebar masih "Segera" (L10c dan L11).
+
+### 10.14 Rancangan L10b: perangkat, harga paket, tanggal libur (untuk dikonfirmasi di awal L10b)
+
+L10 dipecah menjadi empat bagian agar tiap bagian bisa dites dan di-commit sendiri: L10a selesai; **L10b** perangkat + foto, harga paket, tanggal libur; **L10c** pengaturan sistem, konten beranda, templat email; **L10d** pelanggan dan log aktivitas.
+
+**Isi L10b:**
+- **Perangkat:** daftar unit (kode, jenis, nama, status, lokasi), tambah dan ubah unit (kode unik, jenis PS4/PS5, nama tampil, tag, deskripsi, daftar game, status `Tersedia`/`Perawatan`/`Nonaktif`); **unggah foto** (jpg, png, webp, maksimal 2 MB) disimpan di `storage/app/public` dan ditampilkan lewat `php artisan storage:link` (menggantikan placeholder di katalog beranda); unit yang sedang `Disewa` tidak bisa diubah statusnya atau dinonaktifkan.
+- **Harga paket:** daftar paket per jenis (durasi, harga, aktif), tambah, ubah harga, aktif/nonaktifkan; kombinasi jenis dan durasi unik. Harga lama pada pesanan yang sudah ada tidak berubah (harga disalin ke booking saat dibuat).
+- **Tanggal libur:** tambah dan hapus tanggal di `blocked_dates` (kolom `tanggal`, `console_id` kosong berarti semua unit, `alasan`); sudah dibaca oleh `BookingService` sejak L5.
+- Menu sidebar: **Perangkat**, **Harga**, **Tanggal Libur** (atau satu menu "Katalog" dengan tab). Semua aksi tercatat di `activity_logs`.
+
+**Pertanyaan yang dikonfirmasi di awal L10b:**
+1. **Foto unit:** unggah berkas (usulan, perlu `storage:link`) atau cukup menempel alamat gambar (URL)?
+2. **Menghapus unit:** unit yang pernah punya booking hanya bisa **dinonaktifkan** (usulan), dan unit tanpa booking boleh dihapus; atau tidak ada penghapusan sama sekali?
+3. **Tata letak menu:** tiga menu terpisah (Perangkat, Harga, Tanggal Libur) atau satu menu "Katalog" dengan tab (usulan: tiga menu terpisah, lebih sederhana)?
+
+**Yang dibutuhkan di awal L10b (kirim outputnya):**
 
 ```powershell
-mysql -u root gamebox_rent -e "SELECT status_booking, COUNT(*) AS jumlah FROM bookings GROUP BY status_booking;"
-mysql -u root gamebox_rent -e "SELECT status_pembayaran, COUNT(*) AS jumlah FROM payments GROUP BY status_pembayaran;"
+Test-Path public\storage
 ```
 
-**Hasil yang benar di akhir L10a:** angka KPI sama dengan hitungan manual dari database; pencarian dan filter pesanan benar; pembatalan melepas jadwal dan unit serta mengirim email; semua aksi tercatat di `activity_logs`; commit `L10a: dasbor dan manajemen pesanan`.
+```powershell
+mysql -u root gamebox_rent -e "SELECT kode_unit, jenis, status, foto FROM consoles;"
+```
+
+```powershell
+mysql -u root gamebox_rent -e "SELECT jenis, COUNT(*) AS jumlah_paket FROM packages GROUP BY jenis;"
+```
+
+`Test-Path public\storage` menunjukkan apakah tautan penyimpanan sudah dibuat; bila `False`, `php artisan storage:link` akan dijalankan bersama kode L10b. Di Windows, perintah itu kadang butuh PowerShell dengan hak Administrator atau Developer Mode aktif.
+
+**Hasil yang benar di akhir L10b:** unit baru muncul di katalog beranda dengan foto yang diunggah; mengubah harga paket langsung mengubah "mulai dari" di katalog dan form booking; tanggal libur menutup jam booking di tanggal itu; unit `Perawatan` tidak muncul di form booking; semua aksi tercatat di log; commit `L10b: perangkat, harga, tanggal libur`.
 
 ---
 
@@ -740,15 +788,22 @@ mysql -u root gamebox_rent -e "SELECT status_pembayaran, COUNT(*) AS jumlah FROM
 - [x] Tes lolos
 - [x] Commit `L9: pelacakan pengantaran`
 
-### L10a (berikutnya): dasbor KPI dan manajemen pesanan
-- [ ] Output jumlah `bookings` per status dan `payments` per status dikirim
-- [ ] Keputusan: periode default, grafik CSS/SVG atau Chart.js, pembatalan pesanan yang sudah dibayar
-- [ ] Dasbor KPI dan grafik; daftar, filter, pencarian, dan detail pesanan admin; aksi Batalkan pesanan
-- [ ] Commit `L10a: dasbor dan manajemen pesanan`
+### L10a
+- [x] Output jumlah `bookings` per status dan `payments` per status dikirim
+- [x] Keputusan: periode bulan berjalan, grafik CSS, pembatalan pesanan yang sudah dibayar diizinkan
+- [x] Migrasi `alasan_batal`, `dibatalkan_at`; `DashboardService`, `CancelService`, dasbor KPI, daftar/filter/detail pesanan, aksi Batalkan
+- [x] Tes lolos (KPI cocok dengan database, pembatalan melepas jadwal dan mengirim email)
+- [x] Commit `L10a: dasbor dan manajemen pesanan`
 
-### L10b dan L10c (setelah L10a)
-- [ ] L10b: perangkat (termasuk foto, `storage:link`), harga, pengaturan, konten, templat email, tanggal libur
-- [ ] L10c: pelanggan (ubah status) dan log aktivitas
+### L10b (berikutnya): perangkat, harga paket, tanggal libur
+- [ ] Output `Test-Path public\storage`, daftar unit, dan jumlah paket per jenis dikirim
+- [ ] Keputusan: foto unggah atau URL, aturan hapus unit, tata letak menu
+- [ ] CRUD perangkat dengan unggah foto (`storage:link`), harga paket, tanggal libur; semua aksi tercatat di log
+- [ ] Commit `L10b: perangkat, harga, tanggal libur`
+
+### L10c dan L10d (setelah L10b)
+- [ ] L10c: pengaturan sistem (`settings`), konten beranda (`contents`), templat email (`email_templates`)
+- [ ] L10d: pelanggan (ubah status) dan log aktivitas
 
 ---
 
@@ -756,8 +811,8 @@ mysql -u root gamebox_rent -e "SELECT status_pembayaran, COUNT(*) AS jumlah FROM
 
 1. Selesaikan checklist langkah yang sedang berjalan.
 2. Kirim bukti: output perintah cek atau screenshot halaman.
-3. Tulis **"lanjut L10a"** (atau langkah berikutnya).
+3. Tulis **"lanjut L10b"** (atau langkah berikutnya).
 
 Jika memulai percakapan baru, lampirkan README ini + `PRD_GameBox_Rent.pdf` + README dan zip proyek Apps Script lama (acuan aturan bisnis dan tes) + `stitch_prd_visual_interface_prototype.zip`, lalu tulis:
 
-> Saya memindahkan proyek GameBox Rent dari Google Apps Script ke Laravel 13.40 (PHP 8.3, Blade + Tailwind + MySQL via Laragon di Windows, pembayaran Midtrans sandbox). L1, L2 (migrasi database + seeder), L3 (layout, login pelanggan dan admin terpisah, role + middleware), L4 (beranda dan katalog unit), L5 (booking: jadwal, bentrok + buffer, harga dihitung server), dan L6 (pembayaran Midtrans sandbox: popup Snap, cek status, kode konfirmasi, riwayat pesanan) L7 (invoice PDF dan email konfirmasi pembayaran), L8 (admin konfirmasi kode, serah terima, tandai selesai, armada), dan L9 (pelacakan pengantaran) sudah selesai, lolos tes, dan di-commit. Baca README_Laravel.md. Lanjutkan dari **L10a: dasbor admin KPI dan manajemen pesanan (desain Stitch `dashboard_admin_kpi_operasional`)**, step by step, beri kode dan README per langkah (jangan zip), jalankan satu perintah per baris, dan sebutkan file mana yang dibuat baru atau diubah.
+> Saya memindahkan proyek GameBox Rent dari Google Apps Script ke Laravel 13.40 (PHP 8.3, Blade + Tailwind + MySQL via Laragon di Windows, pembayaran Midtrans sandbox). L1, L2 (migrasi database + seeder), L3 (layout, login pelanggan dan admin terpisah, role + middleware), L4 (beranda dan katalog unit), L5 (booking: jadwal, bentrok + buffer, harga dihitung server), dan L6 (pembayaran Midtrans sandbox: popup Snap, cek status, kode konfirmasi, riwayat pesanan) L7 (invoice PDF dan email konfirmasi pembayaran), L8 (admin konfirmasi kode, serah terima, tandai selesai, armada), L9 (pelacakan pengantaran), dan L10a (dasbor admin KPI dan manajemen pesanan) sudah selesai, lolos tes, dan di-commit. Baca README_Laravel.md. Lanjutkan dari **L10b: admin perangkat (CRUD + unggah foto), harga paket, dan tanggal libur**, step by step, beri kode dan README per langkah (jangan zip), jalankan satu perintah per baris, dan sebutkan file mana yang dibuat baru atau diubah.
