@@ -19,6 +19,7 @@
                 ['admin.dashboard', 'admin.dashboard', 'dashboard', 'Dasbor'],
                 ['admin.pesanan*', 'admin.pesanan', 'receipt_long', 'Pesanan'],
                 ['admin.pelanggan*', 'admin.pelanggan', 'group', 'Pelanggan'],
+                ['admin.laporan*', 'admin.laporan', 'payments', 'Laporan'],
                 ['admin.konfirmasi*', 'admin.konfirmasi', 'pin', 'Konfirmasi Kode'],
                 ['admin.pengiriman*', 'admin.pengiriman', 'local_shipping', 'Pengiriman'],
                 ['admin.armada*', 'admin.armada', 'videogame_asset', 'Jadwal & Lokasi'],
@@ -30,7 +31,7 @@
                 ['admin.email*', 'admin.email', 'mail', 'Templat Email'],
                 ['admin.log', 'admin.log', 'history', 'Log Aktivitas'],
             ];
-            $menuNanti = [['payments', 'Laporan']];
+            $menuNanti = [];
         @endphp
         <nav class="flex-1 space-y-1 p-4">
             @foreach ($menu as [$pola, $rute, $ikon, $label])

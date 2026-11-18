@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\HandoverController;
 use App\Http\Controllers\Admin\HolidayController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PackageController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UnitController;
 use App\Http\Controllers\Auth\AdminAuthController;
@@ -123,5 +124,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // L10d: log aktivitas (hanya baca)
         Route::get('/log', [ActivityLogController::class, 'index'])->name('log');
+
+        // L11: laporan keuangan
+        Route::get('/laporan', [ReportController::class, 'index'])->name('laporan');
+        Route::get('/laporan/pdf', [ReportController::class, 'pdf'])->middleware('throttle:20,1')->name('laporan.pdf');
+        Route::get('/laporan/excel', [ReportController::class, 'excel'])->middleware('throttle:20,1')->name('laporan.excel');
     });
 });
