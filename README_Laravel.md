@@ -4,7 +4,7 @@ Pemindahan proyek **GameBox Rent** dari Google Apps Script + Google Sheets ke **
 
 Proyek lama (Apps Script, Langkah 1 sampai 6 selesai dan lolos tes) **tetap disimpan sebagai acuan** aturan bisnis, daftar tes, dan desain. Jangan dihapus.
 
-**Posisi sekarang: L1 sampai L10b selesai dan lolos tes. Berikutnya L10c (pengaturan sistem, konten beranda, templat email); L10 dibagi menjadi L10a sampai L10d.**
+**Posisi sekarang: L1 sampai L10d selesai dan lolos tes (L10 dibagi menjadi L10a sampai L10d, semuanya selesai). Berikutnya L11 (laporan keuangan dan ekspor PDF/Excel).**
 
 ---
 
@@ -37,8 +37,8 @@ Proyek lama (Apps Script, Langkah 1 sampai 6 selesai dan lolos tes) **tetap disi
 | L7 | Invoice PDF + email (DomPDF + Laravel Mail) | **Selesai, lolos semua tes** (bagian 10.10) |
 | L8 | Admin: konfirmasi kode, serah terima, tandai selesai, lokasi konsol | **Selesai, lolos semua tes** (bagian 10.11) |
 | L9 | Pelacakan kurir (berbasis status) | **Selesai, lolos semua tes** (bagian 10.12) |
-| **L10** | Admin: dashboard, pesanan, jadwal, perangkat, harga, pengaturan, pelanggan, log. Dibagi: **L10a** dasbor KPI + manajemen pesanan (**selesai**, bagian 10.13); **L10b** perangkat + foto, harga paket, tanggal libur (**selesai**, bagian 10.14); **L10c** pengaturan sistem, konten beranda, templat email; **L10d** pelanggan + log aktivitas | **Berikutnya: L10c** (bagian 10.15) |
-| L11 | Laporan keuangan + ekspor PDF dan Excel | Belum |
+| **L10** | Admin: dashboard, pesanan, jadwal, perangkat, harga, pengaturan, pelanggan, log. Dibagi: **L10a** dasbor KPI + manajemen pesanan (**selesai**, bagian 10.13); **L10b** perangkat + foto, harga paket, tanggal libur (**selesai**, bagian 10.14); **L10c** pengaturan sistem, konten beranda, templat email (**selesai**, bagian 10.15); **L10d** pelanggan + log aktivitas (**selesai**, bagian 10.16) | **Selesai, lolos semua tes** |
+| **L11** | Laporan keuangan + ekspor PDF dan Excel | **Berikutnya** (bagian 10.17) |
 | L12 | Scheduler (batal otomatis, pengingat email) | Belum |
 | L13 | Pengujian (kriteria penerimaan PRD) + deploy | Belum |
 
@@ -213,6 +213,8 @@ Riwayat saat ini:
 | (L9) | `L9: pelacakan pengantaran` |
 | (L10a) | `L10a: dasbor dan manajemen pesanan` |
 | (L10b) | `L10b: perangkat, harga, tanggal libur` |
+| (L10c) | `L10c: pengaturan, konten, templat email` |
+| (L10d) | `L10d: pelanggan dan log aktivitas` (sesuaikan dengan pesan commit yang dipakai saat push) |
 
 Format commit tiap langkah: `Lx: ringkasan`. Sebelum `git add .`, cek `git status` dan pastikan `.env` tidak muncul (sudah ada di `.gitignore` bawaan).
 
@@ -269,7 +271,7 @@ PATH PHP saat ini: `D:\laragon\bin\php\php-8.3.36-Win32-vs16-x64`.
 
 ---
 
-## 10. Status L3 sampai L10b (selesai) dan rancangan L10c
+## 10. Status L3 sampai L10d (selesai) dan rancangan L11
 
 ### 10.1 Keputusan L3 yang dipakai
 
@@ -673,30 +675,94 @@ PATH PHP saat ini: `D:\laragon\bin\php\php-8.3.36-Win32-vs16-x64`.
 - Setelah menguji, kembalikan data uji (harga paket, paket tambahan, tanggal libur) lewat halamannya masing-masing.
 - Menu Laporan dan Pengaturan di sidebar masih "Segera" (L11 dan L10c).
 
-### 10.15 Rancangan L10c: pengaturan sistem, konten beranda, templat email (untuk dikonfirmasi di awal L10c)
+### 10.15 Status L10c (selesai): pengaturan sistem, konten beranda, templat email
+
+**Keputusan yang dipakai:** mengikuti usulan awal: hanya identitas (`nama_situs`, `tagline`, `kontak`, `alamat`, logo) yang diterapkan ke tampilan, sedangkan warna dan font tetap dari tema Stitch; konten beranda diedit lewat formulir terstruktur (tanpa mengetik format `Judul::Isi|...`); templat email punya pratinjau dan tombol **kirim uji** ke email admin. Tidak ada migrasi baru (tabel `settings`, `contents`, `email_templates` sudah ada dari L2).
 
 **Isi L10c:**
-- **Pengaturan sistem** (`settings`, pasangan `key` dan `value`): halaman berkelompok dengan validasi per kunci. Operasional: `buffer_jam`, `batas_bayar_menit`, `toleransi_ambil_menit`, `maks_hari_ke_depan`, `maks_booking_menunggu`, `jam_mulai_slot` (daftar jam 0 sampai 23). Harga: `harga_stik`, `denda_keterlambatan`, `stok_stik`, `biaya_pengiriman`, `pengiriman_aktif`, `deposit`. Identitas: `nama_situs`, `tagline`, `kontak`, `alamat`, `logo_url`, `prefix_invoice`, `panjang_kode`. Perubahan hanya berlaku untuk booking baru (nilai sudah disalin ke setiap pesanan). Kunci yang belum dipakai kode (mis. `deposit`) ditandai.
-- **Konten beranda** (`contents`): judul, deskripsi, badge, poin hero, cara menyewa, kelengkapan standar, operasional, dan teks catatan, dengan editor yang ramah (daftar pasangan Judul dan Isi yang bisa ditambah dan dihapus), tanpa harus mengetik format `Judul::Isi|Judul::Isi`.
-- **Templat email** (`email_templates`: `jenis_email`, `subjek`, `isi`): ubah subjek dan isi dengan daftar placeholder yang tersedia per jenis, pratinjau, dan **kirim uji** ke email admin (tercatat di log karena `MAIL_MAILER=log`).
-- Semua perubahan tercatat di `activity_logs`.
+- **Pengaturan sistem** (`settings`, pasangan `key` dan `value`): halaman berkelompok dengan validasi per kunci. Operasional: `buffer_jam`, `batas_bayar_menit`, `toleransi_ambil_menit`, `maks_hari_ke_depan`, `maks_booking_menunggu`, `jam_mulai_slot`. Harga: `harga_stik`, `denda_keterlambatan`, `stok_stik`, `biaya_pengiriman`, `pengiriman_aktif`. Identitas: `nama_situs`, `tagline`, `kontak`, `alamat`, `logo_url`, `prefix_invoice`, `panjang_kode`. Perubahan hanya berlaku untuk booking baru (nilai sudah disalin ke setiap pesanan).
+- **Konten beranda** (`contents`): judul, deskripsi, badge, poin hero, cara menyewa, kelengkapan standar, operasional, dan teks catatan; perubahan langsung terlihat di halaman depan.
+- **Templat email** (`email_templates`: `jenis_email`, `subjek`, `isi`): ubah subjek dan isi dengan placeholder yang tersedia, pratinjau, dan kirim uji ke email admin (tercatat di log karena `MAIL_MAILER=log`, aksi log `email_uji`).
 
-**Pertanyaan yang dikonfirmasi di awal L10c:**
-1. **Branding** (`warna_*`, `font_*`, `logo_url`): hanya `nama_situs`, `tagline`, `kontak`, `alamat`, dan logo yang diterapkan ke tampilan (usulan), sedangkan warna dan font tetap dari tema Stitch, atau warna dan font juga diterapkan?
-2. **Editor konten beranda:** formulir terstruktur dengan baris yang bisa ditambah dan dihapus (usulan), atau kotak teks mentah dengan format `Judul::Isi|...`?
-3. **Templat email:** ada pratinjau dan tombol **kirim uji** ke email admin (usulan), atau cukup mengedit subjek dan isi?
+**Berkas L10c:**
 
-**Yang dibutuhkan di awal L10c (kirim outputnya):**
+| Berkas | Lokasi | Catatan |
+|---|---|---|
+| `SettingsController.php` | `app/Http/Controllers/Admin/` | Baru: tampil dan simpan pengaturan |
+| `ContentController.php` | `app/Http/Controllers/Admin/` | Baru: tampil dan simpan konten beranda |
+| `EmailTemplateController.php` | `app/Http/Controllers/Admin/` | Baru: daftar, simpan, pratinjau, kirim uji |
+| `SettingsService.php` | `app/Services/` | Membaca pengaturan; identitas situs (`nama_situs`) dipakai oleh layout admin |
+| `web.php` | `routes/` | Diubah (tabel di bawah) |
+| `admin.blade.php` | `resources/views/layouts/` | Diubah: menu **Pengaturan**, **Konten Beranda**, **Templat Email** aktif |
+| folder `pengaturan`, `konten`, `email` | `resources/views/admin/` | Baru: tampilan masing-masing halaman |
+
+**Route L10c (semua `auth` + `role:admin`):**
+
+| URL | Nama | Fungsi |
+|---|---|---|
+| `GET /admin/pengaturan`, `POST /admin/pengaturan` | `admin.pengaturan`, `.simpan` | Lihat dan simpan pengaturan |
+| `GET /admin/konten`, `POST /admin/konten` | `admin.konten`, `.simpan` | Lihat dan simpan konten beranda |
+| `GET /admin/email` | `admin.email` | Daftar templat email |
+| `POST /admin/email/{jenis}` | `admin.email.simpan` | Simpan templat |
+| `POST /admin/email/{jenis}/pratinjau` | `admin.email.pratinjau` | Pratinjau (throttle 60/menit) |
+| `POST /admin/email/{jenis}/uji` | `admin.email.uji` | Kirim email uji ke admin (throttle 10/menit) |
+
+**Hasil tes:** pengaturan, konten beranda, dan templat email diuji dan semuanya lolos sebelum di-commit (perubahan pengaturan memengaruhi booking baru tanpa mengubah pesanan lama, nilai tidak valid ditolak, konten beranda dan templat email yang diubah terlihat hasilnya).
+
+### 10.16 Status L10d (selesai): pelanggan dan log aktivitas
+
+**Keputusan yang dipakai:** halaman pelanggan hanya menampilkan akun berperan `user` (akun admin tidak bisa dibuka atau diubah dari sana); status nonaktif memakai nilai `Nonaktif` (`isActive()` hanya bernilai benar untuk `Aktif`); log aktivitas hanya baca; tanpa model `ActivityLog` (halaman log memakai query langsung seperti detail pesanan admin) dan tanpa migrasi baru (struktur `activity_logs` dari L2 sudah cukup).
+
+**Berkas L10d:**
+
+| Berkas | Lokasi | Catatan |
+|---|---|---|
+| `CustomerController.php` | `app/Http/Controllers/Admin/` | Baru: `index` (filter dan pencarian), `show` (ringkasan dan riwayat pesanan), `ubahStatus` |
+| `ActivityLogController.php` | `app/Http/Controllers/Admin/` | Baru: `index` (hanya baca, 25 baris per halaman) |
+| `index.blade.php`, `show.blade.php` | `resources/views/admin/pelanggan/` | Baru |
+| `index.blade.php` | `resources/views/admin/log/` | Baru |
+| `web.php` | `routes/` | Diubah (tabel di bawah) |
+| `admin.blade.php` | `resources/views/layouts/` | Diubah: menu **Pelanggan** (setelah Pesanan) dan **Log Aktivitas** (paling bawah) |
+
+**Route L10d (semua `auth` + `role:admin`):**
+
+| URL | Nama | Fungsi |
+|---|---|---|
+| `GET /admin/pelanggan` | `admin.pelanggan` | Daftar pelanggan, tab Semua/Aktif/Nonaktif, pencarian nama, email, HP |
+| `GET /admin/pelanggan/{id}` | `admin.pelanggan.show` | Detail: ringkasan belanja dan riwayat pesanan |
+| `POST /admin/pelanggan/{id}/status` | `admin.pelanggan.status` | Aktifkan atau nonaktifkan akun (throttle 30/menit) |
+| `GET /admin/log` | `admin.log` | Log aktivitas, filter admin, aksi, rentang tanggal, pencarian keterangan |
+
+**Aturan penting:**
+- **Total belanja** pelanggan = jumlah `total_harga` pesanan berstatus `Dibayar`, `Sedang Disewa`, dan `Selesai`; kartu ringkasan detail menampilkan total pesanan, pesanan dibayar, total belanja, dan tanggal pesanan terakhir.
+- **Ubah status** berjalan dalam satu transaksi: kolom `status` diisi lewat `forceFill()` (tidak ada di `$fillable`), dicatat lewat `ActivityLogger::catat()` dengan aksi `Aktifkan Pelanggan` atau `Nonaktifkan Pelanggan`, dan bila menjadi `Nonaktif` serta `SESSION_DRIVER=database`, baris sesi pelanggan di tabel `sessions` dihapus sehingga langsung keluar. Mengubah ke status yang sama ditolak dengan pesan. Pelanggan nonaktif tetap ditolak saat login dan dikeluarkan oleh `EnsureRole` bila sesi masih ada.
+- **Log aktivitas** membaca `activity_logs` digabung nama admin; filter jenis aksi diambil dari nilai yang benar-benar ada di tabel (aksi lama seperti `email_uji` berformat huruf kecil bergaris bawah, aksi baru berformat kapital berspasi, keduanya tetap tampil). Halaman ini tidak punya tombol ubah atau hapus.
+
+**Hasil tes (semua lolos):** route terdaftar (4 route L10d); daftar, tab status, dan pencarian bekerja; detail pelanggan sesuai riwayat; nonaktifkan akun memutus sesi dan login ditolak, aktifkan kembali memulihkan akses; baris `Nonaktifkan Pelanggan` dan `Aktifkan Pelanggan` tercatat di `activity_logs` lengkap dengan nama dan email; menu **Log Aktivitas** menampilkan log terbaru di atas dengan semua filter berfungsi.
+
+**Catatan:** uji nonaktifkan akun hanya pada akun pelanggan uji, bukan akun yang dipakai sungguhan, dan kembalikan ke `Aktif` setelah selesai.
+
+### 10.17 Rancangan L11: laporan keuangan dan ekspor PDF/Excel (untuk dikonfirmasi di awal L11)
+
+**Isi L11:**
+- Halaman **Laporan** di panel admin (menu "Laporan" di sidebar masih bertanda Segera) berdasarkan layar Stitch "laporan keuangan": ringkasan pemasukan per periode, rincian transaksi, pemasukan per jenis unit, stik, dan denda.
+- **Ekspor PDF** (DomPDF sudah terpasang sejak L7) dan **ekspor Excel** (paket baru, dipilih di awal L11; pemasangannya butuh hotspot HP bila WiFi memblokir Packagist).
+- Aturan hitung mengikuti dasbor L10a: pemasukan dari `payments` berstatus `Berhasil` untuk pesanan yang tidak `Dibatalkan`, berdasarkan `waktu_bayar`.
+
+**Pertanyaan yang dikonfirmasi di awal L11:**
+1. Periode laporan: bulan, rentang tanggal bebas, atau keduanya?
+2. Kolom yang diekspor: ringkasan saja, atau juga rincian per pesanan?
+3. Paket Excel: `maatwebsite/excel` atau `phpoffice/phpspreadsheet` langsung?
+
+**Yang dibutuhkan di awal L11 (kirim outputnya):**
 
 ```powershell
-mysql -u root gamebox_rent -e "DESCRIBE settings;"
+Get-Content app\Services\DashboardService.php
+Get-Content composer.json
+Get-Content resources\views\admin\dashboard.blade.php
 ```
 
-```powershell
-mysql -u root gamebox_rent -e "DESCRIBE contents;"
-```
-
-**Hasil yang benar di akhir L10c:** mengubah pengaturan langsung memengaruhi booking baru (mis. buffer atau slot jam) tanpa mengubah pesanan lama; nilai tidak valid ditolak dengan pesan jelas; perubahan konten beranda terlihat di halaman depan; templat email yang diubah terlihat pada email berikutnya; commit `L10c: pengaturan, konten, templat email`.
+**Hasil yang benar di akhir L11:** angka laporan sama dengan angka dasbor untuk periode yang sama dan dengan hitungan langsung di database; ekspor PDF dan Excel terunduh dengan isi yang sama; commit `L11: laporan keuangan dan ekspor`.
 
 ---
 
@@ -718,7 +784,7 @@ mysql -u root gamebox_rent -e "DESCRIBE contents;"
 - Pengiriman: `Menunggu Dikirim` → `Kurir Ditugaskan` → `Dalam Perjalanan` → `Telah Diterima`; `Gagal Dikirim`
 - Cara penerimaan: `Ambil Sendiri`, `Diantar`
 - Pembayaran Midtrans: mengikuti `transaction_status` (pending, settlement, deny, cancel, expire, failure); detail dipastikan di L6.
-- Pengguna: `role` = `user`/`admin`; `status` = `Aktif` (nilai lain ditentukan di L10)
+- Pengguna: `role` = `user`/`admin`; `status` = `Aktif` atau `Nonaktif` (selain `Aktif` dianggap nonaktif)
 
 **Data awal (seeder):** `settings` (harga_stik 10000, denda 20000, buffer 1 jam, batas bayar 15 menit, toleransi ambil 30 menit, stok stik 6, jam slot 0,2,...,22, maks hari 7, maks booking menunggu 2, biaya pengiriman 20000, pengiriman aktif, identitas situs, tema), `packages` (PS4 dan PS5, 6 sampai 24 jam), `consoles` (PS4-01, PS4-02, PS5-01, PS5-02, PS5-03), `payment_methods`, `contents`, `email_templates`, satu akun admin.
 
@@ -747,6 +813,7 @@ mysql -u root gamebox_rent -e "DESCRIBE contents;"
 - **L6:** buat akun **Midtrans sandbox**; Client Key dan Server Key disimpan di `.env`. Pengujian webhook dari komputer lokal butuh alamat publik sementara (ngrok atau Cloudflare Tunnel).
 - **L7:** pengaturan email (SMTP uji seperti Mailtrap/Mailpit atau Gmail App Password); saat ini `MAIL_MAILER=log` (email hanya ditulis ke file log).
 - **L13:** hosting yang mendukung PHP 8.3+, MySQL, dan cron (untuk Scheduler) serta kemampuan menerima webhook publik.
+- **L11:** paket ekspor Excel (belum dipasang) butuh `composer require`; gunakan hotspot HP bila WiFi memblokir Packagist.
 - **Sebelum dipakai sungguhan:** ganti password admin awal (`Admin123!`).
 
 ---
@@ -842,14 +909,25 @@ mysql -u root gamebox_rent -e "DESCRIBE contents;"
 - [x] 21 tes lolos
 - [x] Commit `L10b: perangkat, harga, tanggal libur`
 
-### L10c (berikutnya): pengaturan sistem, konten beranda, templat email
-- [ ] Output `DESCRIBE settings` dan `DESCRIBE contents` dikirim
-- [ ] Keputusan: branding yang diterapkan, editor konten, pratinjau dan kirim uji email
-- [ ] Halaman Pengaturan (validasi per kunci), editor konten beranda, editor templat email; log aktivitas
-- [ ] Commit `L10c: pengaturan, konten, templat email`
+### L10c
+- [x] Output `DESCRIBE settings` dan `DESCRIBE contents` dikirim
+- [x] Keputusan: branding yang diterapkan, editor konten, pratinjau dan kirim uji email
+- [x] Halaman Pengaturan (validasi per kunci), editor konten beranda, editor templat email (pratinjau dan kirim uji)
+- [x] Tes lolos
+- [x] Commit `L10c: pengaturan, konten, templat email`
 
-### L10d (setelah L10c)
-- [ ] Pelanggan (cari, riwayat pesanan, ubah status Aktif/Nonaktif) dan log aktivitas (filter aksi dan tanggal)
+### L10d
+- [x] Struktur `activity_logs` dan `users` (kolom `no_hp`, `role`, `status`) diperiksa, `ActivityLogger` dan `EnsureRole` dikirim
+- [x] Pelanggan: daftar, pencarian, filter status, detail dengan riwayat pesanan, aktif/nonaktifkan akun (sesi diputus, tercatat di log)
+- [x] Log aktivitas: filter admin, aksi, tanggal, pencarian keterangan (hanya baca)
+- [x] Tes lolos (4 route, nonaktifkan dan aktifkan akun, isi `activity_logs`)
+- [x] Commit L10d dan README diperbarui sampai L10d
+
+### L11 (berikutnya): laporan keuangan dan ekspor
+- [ ] Output `DashboardService.php`, `composer.json`, dan `dashboard.blade.php` dikirim
+- [ ] Keputusan: periode laporan, kolom ekspor, paket Excel
+- [ ] Halaman Laporan, ekspor PDF dan Excel
+- [ ] Commit `L11: laporan keuangan dan ekspor`
 
 ---
 
@@ -857,8 +935,8 @@ mysql -u root gamebox_rent -e "DESCRIBE contents;"
 
 1. Selesaikan checklist langkah yang sedang berjalan.
 2. Kirim bukti: output perintah cek atau screenshot halaman.
-3. Tulis **"lanjut L10c"** (atau langkah berikutnya).
+3. Tulis **"lanjut L11"** (atau langkah berikutnya).
 
 Jika memulai percakapan baru, lampirkan README ini + `PRD_GameBox_Rent.pdf` + README dan zip proyek Apps Script lama (acuan aturan bisnis dan tes) + `stitch_prd_visual_interface_prototype.zip`, lalu tulis:
 
-> Saya memindahkan proyek GameBox Rent dari Google Apps Script ke Laravel 13.40 (PHP 8.3, Blade + Tailwind + MySQL via Laragon di Windows, pembayaran Midtrans sandbox). L1, L2 (migrasi database + seeder), L3 (layout, login pelanggan dan admin terpisah, role + middleware), L4 (beranda dan katalog unit), L5 (booking: jadwal, bentrok + buffer, harga dihitung server), dan L6 (pembayaran Midtrans sandbox: popup Snap, cek status, kode konfirmasi, riwayat pesanan) L7 (invoice PDF dan email konfirmasi pembayaran), L8 (admin konfirmasi kode, serah terima, tandai selesai, armada), L9 (pelacakan pengantaran), dan L10a (dasbor admin KPI dan manajemen pesanan), dan L10b (admin perangkat dengan foto, harga paket, tanggal libur) sudah selesai, lolos tes, dan di-commit. Baca README_Laravel.md. Lanjutkan dari **L10c: admin pengaturan sistem, konten beranda, dan templat email**, step by step, beri kode dan README per langkah (jangan zip), jalankan satu perintah per baris, dan sebutkan file mana yang dibuat baru atau diubah.
+> Saya memindahkan proyek GameBox Rent dari Google Apps Script ke Laravel 13.40 (PHP 8.3, Blade + Tailwind + MySQL via Laragon di Windows, pembayaran Midtrans sandbox). L1, L2 (migrasi database + seeder), L3 (layout, login pelanggan dan admin terpisah, role + middleware), L4 (beranda dan katalog unit), L5 (booking: jadwal, bentrok + buffer, harga dihitung server), L6 (pembayaran Midtrans sandbox: popup Snap, cek status, kode konfirmasi, riwayat pesanan), L7 (invoice PDF dan email konfirmasi pembayaran), L8 (admin konfirmasi kode, serah terima, tandai selesai, armada), L9 (pelacakan pengantaran), L10a (dasbor admin KPI dan manajemen pesanan), L10b (admin perangkat dengan foto, harga paket, tanggal libur), L10c (admin pengaturan sistem, konten beranda, templat email), dan L10d (admin pelanggan dan log aktivitas) sudah selesai, lolos tes, dan di-commit. Baca README_Laravel.md. Lanjutkan dari **L11: laporan keuangan dan ekspor PDF/Excel**, step by step. Berikan kode LENGKAP per file (jangan potongan atau "cari baris"), tandai jelas file BARU atau TIMPA SELURUHNYA, beri README per langkah (jangan zip), dan jalankan satu perintah per baris.
