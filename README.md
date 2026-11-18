@@ -20,7 +20,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Pembayaran-Midtrans_Sandbox-0A4DA2?style=flat-square" alt="Midtrans Sandbox">
-  <img src="https://img.shields.io/badge/Status-L10b_selesai,_L10c_berikutnya-2F6BFF?style=flat-square" alt="Status pengembangan">
+  <img src="https://img.shields.io/badge/Status-L10d_selesai,_L11_berikutnya-2F6BFF?style=flat-square" alt="Status pengembangan">
   <img src="https://img.shields.io/badge/Platform-Windows_%2B_Laragon-5DE6FF?style=flat-square" alt="Windows dan Laragon">
 </p>
 
@@ -51,12 +51,16 @@ Sistem rental **PlayStation 4 & 5** berbasis web. Pelanggan memilih unit, jadwal
 - Manajemen pesanan admin: daftar dengan filter dan pencarian, detail lengkap, unduh invoice, dan pembatalan pesanan dengan alasan (jadwal dilepas, pelanggan diberi tahu lewat email)
 - Pengelolaan perangkat (tambah, ubah, nonaktifkan, hapus, unggah foto yang tampil di katalog), harga paket per jenis dan durasi, serta tanggal libur (semua unit atau satu unit) yang menutup booking baru
 - Pelacakan pengantaran untuk pesanan Diantar: status berurutan (kurir ditugaskan, dalam perjalanan, diterima, gagal), linimasa yang dilihat pelanggan, dan penerimaan unit yang diverifikasi dengan kode konfirmasi
+- Pengaturan sistem dari panel admin (identitas situs dan parameter bisnis seperti jeda buffer dan batas booking), tanpa perlu mengubah kode atau database langsung
+- Pengelolaan konten beranda dari panel admin (judul, poin keunggulan, cara menyewa)
+- Templat email yang bisa disunting admin, lengkap dengan pratinjau dan pengiriman email uji
+- Manajemen pelanggan admin: daftar dengan pencarian (nama, email, HP) dan filter status, detail pelanggan beserta ringkasan belanja dan riwayat pesanan, serta aktif/nonaktifkan akun (sesi pelanggan langsung diputus dan setiap perubahan tercatat di log)
+- Halaman log aktivitas admin (hanya baca) dengan filter admin, jenis aksi, rentang tanggal, dan pencarian keterangan
 
 **Dalam pengembangan**
 
 - Webhook Midtrans untuk notifikasi pembayaran otomatis (butuh alamat publik; di lokal memakai tombol cek status)
 - Notifikasi email lanjutan (pengingat mulai dan selesai sewa)
-- Panel admin lanjutan: pengaturan sistem, konten beranda, templat email, pelanggan, dan log aktivitas
 - Laporan keuangan dengan ekspor PDF dan Excel
 - Pembatalan otomatis dan pengingat lewat scheduler
 
@@ -77,6 +81,8 @@ Sistem rental **PlayStation 4 & 5** berbasis web. Pelanggan memilih unit, jadwal
 - Booking `Menunggu Pembayaran` memegang jadwal hanya sampai batas bayar; setelah lewat, jadwal otomatis terbuka lagi
 - Total harga = harga paket + (jumlah stik x harga stik) + biaya pengiriman, seluruhnya dihitung di server
 - Setiap booking menyimpan salinan harga, buffer, dan denda saat dibuat, sehingga perubahan pengaturan tidak mengubah pesanan lama
+- Total belanja pelanggan dihitung dari pesanan berstatus `Dibayar`, `Sedang Disewa`, dan `Selesai`
+- Akun pelanggan yang dinonaktifkan tidak bisa masuk dan sesi yang sedang berjalan langsung diputus
 
 ## Menjalankan secara lokal
 
@@ -117,8 +123,12 @@ app/
   Http/Middleware/         EnsureRole (pembatas akses pelanggan/admin)
   Http/Requests/           Validasi form booking
   Models/                  User, Console, Package, Booking, Payment, Delivery, DeliveryEvent
-  Http/Controllers/Admin/  Dasbor, pesanan, konfirmasi kode (serah terima), armada, pengiriman, perangkat, harga, tanggal libur
-  Services/                BookingService, PaymentService (Midtrans), InvoiceService (PDF), HandoverService (serah terima, denda), DeliveryService (pengantaran), DashboardService (KPI), CancelService (pembatalan), NotifikasiService + EmailTemplateService (email)
+  Http/Controllers/Admin/  Dasbor, pesanan, pelanggan, konfirmasi kode (serah terima), armada, pengiriman,
+                           perangkat, harga, tanggal libur, pengaturan, konten beranda, templat email, log aktivitas
+  Services/                BookingService, PaymentService (Midtrans), InvoiceService (PDF), HandoverService (serah terima, denda),
+                           DeliveryService (pengantaran), DashboardService (KPI), CancelService (pembatalan),
+                           NotifikasiService + EmailTemplateService (email), SettingsService (pengaturan situs),
+                           ActivityLogger (pencatat log admin)
   Mail/                    Email pembayaran berhasil (lampiran invoice)
 database/
   migrations/              Skema database
@@ -137,6 +147,8 @@ routes/web.php             Seluruh route
 - Password di-hash, session diregenerasi saat login, dan login dibatasi lewat rate limiting
 - Kolom sensitif (peran, status, harga) tidak bisa diisi lewat input pengguna
 - Pelanggan hanya dapat melihat pesanan miliknya sendiri
+- Halaman pelanggan di panel admin hanya menampilkan akun berperan pelanggan; akun admin tidak bisa dibuka atau diubah dari sana
+- Log aktivitas admin bersifat hanya baca dari panel (tidak bisa diubah atau dihapus)
 
 ## Status pengembangan
 
@@ -153,9 +165,9 @@ routes/web.php             Seluruh route
 | L9 | Pelacakan pengantaran | Selesai |
 | L10a | Admin: dasbor KPI dan manajemen pesanan | Selesai |
 | L10b | Admin: perangkat dan foto, harga paket, tanggal libur | Selesai |
-| L10c | Admin: pengaturan sistem, konten, templat email | Berikutnya |
-| L10d | Admin: pelanggan dan log aktivitas | Direncanakan |
-| L11 | Laporan keuangan dan ekspor | Direncanakan |
+| L10c | Admin: pengaturan sistem, konten, templat email | Selesai |
+| L10d | Admin: pelanggan dan log aktivitas | Selesai |
+| L11 | Laporan keuangan dan ekspor | Berikutnya |
 | L12 | Scheduler (batal otomatis, pengingat) | Direncanakan |
 | L13 | Pengujian dan deploy | Direncanakan |
 
