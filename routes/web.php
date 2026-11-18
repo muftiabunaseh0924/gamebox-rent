@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\ContentController;
+use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\DeliveryController;
 use App\Http\Controllers\Admin\EmailTemplateController;
@@ -113,5 +115,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/email/{jenis}', [EmailTemplateController::class, 'update'])->name('email.simpan');
         Route::post('/email/{jenis}/pratinjau', [EmailTemplateController::class, 'pratinjau'])->middleware('throttle:60,1')->name('email.pratinjau');
         Route::post('/email/{jenis}/uji', [EmailTemplateController::class, 'uji'])->middleware('throttle:10,1')->name('email.uji');
+
+        // L10d: pelanggan
+        Route::get('/pelanggan', [CustomerController::class, 'index'])->name('pelanggan');
+        Route::get('/pelanggan/{user}', [CustomerController::class, 'show'])->whereNumber('user')->name('pelanggan.show');
+        Route::post('/pelanggan/{user}/status', [CustomerController::class, 'ubahStatus'])->whereNumber('user')->middleware('throttle:30,1')->name('pelanggan.status');
+
+        // L10d: log aktivitas (hanya baca)
+        Route::get('/log', [ActivityLogController::class, 'index'])->name('log');
     });
 });

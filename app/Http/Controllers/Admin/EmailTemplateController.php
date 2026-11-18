@@ -42,12 +42,14 @@ class EmailTemplateController extends Controller
         'alasan' => 'Alasan pembatalan',
     ];
 
-    public function index(): View
+    public function index(Request $request): View
     {
         return view('admin.email.index', [
             'jenis' => self::JENIS,
             'placeholder' => self::PLACEHOLDER,
             'templat' => DB::table('email_templates')->get()->keyBy('jenis_email'),
+            'penerimaBawaan' => $request->user()->email,
+            'mailer' => config('mail.default'),
         ]);
     }
 
@@ -102,22 +104,35 @@ class EmailTemplateController extends Controller
     {
         abort_unless(isset(self::JENIS[$jenis]), 404);
 
+        // Penerima hanya boleh email yang terdaftar di aplikasi (admin atau pelanggan).
+        $request->merge(['penerima' => strtolower(trim((string) $request->input('penerima')))]);
+        $request->validate([
+            'penerima' => ['nullable', 'email:rfc', 'max:150', 'exists:users,email'],
+        ], [
+            'email' => 'Alamat penerima tidak valid.',
+            'exists' => 'Penerima uji harus email yang terdaftar di aplikasi (akun admin atau pelanggan).',
+            'max' => 'Alamat penerima terlalu panjang.',
+        ]);
+
         [$subjek, $isi] = $this->rendah($request);
         $admin = $request->user();
+        $penerima = $request->input('penerima') ?: $admin->email;
 
         try {
-            Mail::to($admin->email)->send(new TemplateMail(new Booking(), '[UJI] '.$subjek, $isi));
+            Mail::to($penerima)->send(new TemplateMail(new Booking(), '[UJI] '.$subjek, $isi));
         } catch (\Throwable $e) {
             report($e);
 
             return response()->json(['message' => 'Email uji gagal dikirim: '.$e->getMessage()], 500);
         }
 
-        ActivityLogger::catat($admin, 'email_uji', "Email uji templat {$jenis} dikirim ke {$admin->email}");
+        ActivityLogger::catat($admin, 'email_uji', "Email uji templat {$jenis} dikirim ke {$penerima}");
 
-        $catatan = config('mail.default') === 'log' ? ' Karena MAIL_MAILER=log, email tercatat di storage/logs/laravel.log.' : '';
+        $catatan = config('mail.default') === 'log'
+            ? ' Karena MAIL_MAILER=log, email hanya tercatat di storage/logs/laravel.log dan tidak masuk ke kotak masuk.'
+            : '';
 
-        return response()->json(['pesan' => "Email uji dikirim ke {$admin->email}.{$catatan}"]);
+        return response()->json(['pesan' => "Email uji dikirim ke {$penerima}.{$catatan}"]);
     }
 
     // ------------------------------------------------------------------

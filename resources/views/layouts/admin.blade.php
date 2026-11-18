@@ -18,6 +18,7 @@
             $menu = [
                 ['admin.dashboard', 'admin.dashboard', 'dashboard', 'Dasbor'],
                 ['admin.pesanan*', 'admin.pesanan', 'receipt_long', 'Pesanan'],
+                ['admin.pelanggan*', 'admin.pelanggan', 'group', 'Pelanggan'],
                 ['admin.konfirmasi*', 'admin.konfirmasi', 'pin', 'Konfirmasi Kode'],
                 ['admin.pengiriman*', 'admin.pengiriman', 'local_shipping', 'Pengiriman'],
                 ['admin.armada*', 'admin.armada', 'videogame_asset', 'Jadwal & Lokasi'],
@@ -27,6 +28,7 @@
                 ['admin.pengaturan*', 'admin.pengaturan', 'tune', 'Pengaturan'],
                 ['admin.konten*', 'admin.konten', 'edit_note', 'Konten Beranda'],
                 ['admin.email*', 'admin.email', 'mail', 'Templat Email'],
+                ['admin.log', 'admin.log', 'history', 'Log Aktivitas'],
             ];
             $menuNanti = [['payments', 'Laporan']];
         @endphp

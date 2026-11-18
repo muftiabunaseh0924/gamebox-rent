@@ -1,4 +1,3 @@
-
 @extends('layouts.admin')
 
 @section('title', 'Templat Email')
@@ -6,6 +5,38 @@
 
 @section('content')
 <div class="mx-auto max-w-4xl space-y-6">
+
+    {{-- Penerima email uji --}}
+    <section class="card space-y-3">
+        <h2 class="font-headline text-lg font-bold">Penerima Email Uji</h2>
+
+        <div class="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+            <div>
+                <label for="penerima-uji" class="label-field">Kirim uji ke</label>
+                <input
+                    type="email"
+                    id="penerima-uji"
+                    maxlength="150"
+                    value="{{ $penerimaBawaan }}"
+                    data-bawaan="{{ $penerimaBawaan }}"
+                    class="input-field"
+                    placeholder="alamat email terdaftar"
+                >
+            </div>
+            <button type="button" id="penerima-bawaan" class="btn-secondary !py-2.5">Pakai email admin</button>
+        </div>
+
+        <p class="text-xs text-outline">
+            Harus email yang terdaftar di aplikasi (akun admin atau pelanggan). Pilihan diingat di browser ini.
+        </p>
+
+        @if ($mailer === 'log')
+            <p class="rounded-lg bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+                Pengiriman email saat ini memakai <strong>log</strong>: email hanya tercatat di <code>storage/logs/laravel.log</code>
+                dan tidak masuk ke kotak masuk. Untuk pengiriman sungguhan, atur SMTP di berkas <code>.env</code>.
+            </p>
+        @endif
+    </section>
 
     {{-- Placeholder yang tersedia --}}
     <section class="card space-y-3">
@@ -148,7 +179,7 @@
                     data-aksi="uji"
                     class="btn-secondary !py-2"
                 >
-                    Kirim Uji ke Email Saya
+                    Kirim Uji
                 </button>
 
             </div>
@@ -190,6 +221,26 @@
     var csrfElement = document.querySelector('meta[name="csrf-token"]');
     var csrf = csrfElement ? csrfElement.content : '';
 
+    // Penerima uji: diingat di browser ini.
+    var kolomPenerima = document.getElementById('penerima-uji');
+    var tombolBawaan = document.getElementById('penerima-bawaan');
+    var KUNCI = 'gb_penerima_uji';
+
+    try {
+        var tersimpan = window.localStorage.getItem(KUNCI);
+        if (tersimpan) { kolomPenerima.value = tersimpan; }
+    } catch (e) {}
+
+    function simpanPenerima() {
+        try { window.localStorage.setItem(KUNCI, kolomPenerima.value.trim()); } catch (e) {}
+    }
+
+    kolomPenerima.addEventListener('change', simpanPenerima);
+    tombolBawaan.addEventListener('click', function () {
+        kolomPenerima.value = kolomPenerima.dataset.bawaan;
+        simpanPenerima();
+    });
+
     document.querySelectorAll('[data-templat-email]').forEach(function (form) {
         var pesan = form.querySelector('[data-pesan]');
         var hasil = form.querySelector('[data-hasil]');
@@ -204,7 +255,16 @@
                     : 'bg-surface-container-high text-on-surface');
         }
 
-        async function kirim(url) {
+        async function kirim(url, tambahan) {
+            var badan = {
+                subjek: form.elements.subjek.value,
+                isi: form.elements.isi.value
+            };
+
+            if (tambahan) {
+                Object.keys(tambahan).forEach(function (k) { badan[k] = tambahan[k]; });
+            }
+
             var r = await fetch(url, {
                 method: 'POST',
 
@@ -214,10 +274,7 @@
                     'Content-Type': 'application/json'
                 },
 
-                body: JSON.stringify({
-                    subjek: form.elements.subjek.value,
-                    isi: form.elements.isi.value
-                })
+                body: JSON.stringify(badan)
             });
 
             var data = {};
@@ -266,9 +323,10 @@
                         hasil.classList.remove('hidden');
 
                     } else {
+                        simpanPenerima();
                         tampil('Mengirim email uji...', false);
 
-                        var u = await kirim(form.dataset.uji);
+                        var u = await kirim(form.dataset.uji, { penerima: kolomPenerima.value.trim() });
 
                         tampil(
                             u.ok
