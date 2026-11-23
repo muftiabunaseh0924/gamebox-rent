@@ -4,7 +4,7 @@ Pemindahan proyek **GameBox Rent** dari Google Apps Script + Google Sheets ke **
 
 Proyek lama (Apps Script, Langkah 1 sampai 6 selesai dan lolos tes) **tetap disimpan sebagai acuan** aturan bisnis, daftar tes, dan desain. Jangan dihapus.
 
-**Posisi sekarang: L1 sampai L11 selesai dan lolos tes (L10 dibagi menjadi L10a sampai L10d, semuanya selesai; L11 laporan keuangan dengan ekspor PDF dan Excel selesai). Berikutnya L12 (scheduler: batal otomatis dan pengingat email).**
+**Posisi sekarang: L1 sampai L12 selesai dan lolos tes. Proyek ini hanya prototipe, jadi berhenti di L12 dan L13 (pengujian dan deploy) tidak dikerjakan.**
 
 ---
 
@@ -39,8 +39,8 @@ Proyek lama (Apps Script, Langkah 1 sampai 6 selesai dan lolos tes) **tetap disi
 | L9 | Pelacakan kurir (berbasis status) | **Selesai, lolos semua tes** (bagian 10.12) |
 | **L10** | Admin: dashboard, pesanan, jadwal, perangkat, harga, pengaturan, pelanggan, log. Dibagi: **L10a** dasbor KPI + manajemen pesanan (**selesai**, bagian 10.13); **L10b** perangkat + foto, harga paket, tanggal libur (**selesai**, bagian 10.14); **L10c** pengaturan sistem, konten beranda, templat email (**selesai**, bagian 10.15); **L10d** pelanggan + log aktivitas (**selesai**, bagian 10.16) | **Selesai, lolos semua tes** |
 | **L11** | Laporan keuangan + ekspor PDF dan Excel | **Selesai, lolos semua tes** (bagian 10.17) |
-| **L12** | Scheduler (batal otomatis, pengingat email) | **Berikutnya** (bagian 10.18) |
-| L13 | Pengujian (kriteria penerimaan PRD) + deploy | Belum |
+| **L12** | Scheduler (batal otomatis, pengingat email) | **Selesai, lolos semua tes** (bagian 10.18) |
+| L13 | Pengujian (kriteria penerimaan PRD) + deploy | **Tidak dikerjakan** (proyek ini hanya prototipe) |
 
 ---
 
@@ -215,7 +215,8 @@ Riwayat saat ini:
 | (L10b) | `L10b: perangkat, harga, tanggal libur` |
 | (L10c) | `L10c: pengaturan, konten, templat email` |
 | (L10d) | `L10c-L10d: pengaturan, konten, templat email, pelanggan, log aktivitas` (commit `e2d1f73`) |
-| (L11) | `L11: laporan keuangan dan ekspor` |
+| (L11) | `L11: laporan keuangan dan ekspor PDF/Excel` |
+| (L12) | `L12: scheduler batal otomatis dan pengingat email` |
 
 Format commit tiap langkah: `Lx: ringkasan`. Sebelum `git add .`, cek `git status` dan pastikan `.env` tidak muncul (sudah ada di `.gitignore` bawaan).
 
@@ -272,7 +273,7 @@ PATH PHP saat ini: `D:\laragon\bin\php\php-8.3.36-Win32-vs16-x64`.
 
 ---
 
-## 10. Status L3 sampai L11 (selesai) dan rancangan L12
+## 10. Status L3 sampai L12 (selesai)
 
 ### 10.1 Keputusan L3 yang dipakai
 
@@ -790,28 +791,56 @@ Parameter periode: `bulan=YYYY-MM` atau `dari=YYYY-MM-DD&sampai=YYYY-MM-DD`. Isi
 mysql -u root gamebox_rent -e "SELECT COUNT(DISTINCT b.id) AS transaksi, COALESCE(SUM(p.nominal),0) AS pemasukan FROM payments p JOIN bookings b ON b.id=p.booking_id WHERE p.status_pembayaran='Berhasil' AND b.status_booking<>'Dibatalkan' AND DATE_FORMAT(p.waktu_bayar,'%Y-%m')='2026-11';"
 ```
 
-### 10.18 Rancangan L12: scheduler, batal otomatis dan pengingat email (untuk dikonfirmasi di awal L12)
+### 10.18 Status L12 (selesai): scheduler, batal otomatis dan pengingat email
 
-**Isi L12 (menurut roadmap):**
-- **Pembatalan otomatis** pesanan `Menunggu Pembayaran` yang melewati `batas_bayar` (status dirapikan dan jadwal dilepas; saat ini jadwal hanya "terbuka lagi" secara hitungan).
-- **Pengingat email** sebelum sewa mulai dan sebelum sewa selesai, memakai templat email dari L10c dan `NotifikasiService`.
-- Penjadwalan lewat Laravel scheduler; di Windows + Laragon dijalankan dengan `php artisan schedule:work` selama pengembangan.
+**Keputusan yang dipakai:** pengingat mulai dikirim 1 jam sebelum jadwal mulai dan pengingat selesai 30 menit sebelum jadwal selesai; pembatalan otomatis tidak mengirim email (cukup ubah status dan lepas jadwal); scheduler memeriksa tiap 5 menit.
 
-**Pertanyaan yang dikonfirmasi di awal L12:**
-1. Berapa lama sebelum mulai dan sebelum selesai pengingat dikirim?
-2. Apakah pembatalan otomatis juga mengirim email ke pelanggan?
-3. Seberapa sering scheduler memeriksa (misalnya tiap menit atau tiap 5 menit)?
+**Migrasi baru:** `2026_11_23_090000_tambah_pengingat_ke_bookings` menambah kolom `pengingat_mulai_at` dan `pengingat_selesai_at` di `bookings` (penanda "pengingat sudah dikirim").
 
-**Yang dibutuhkan di awal L12 (kirim outputnya):**
+**Berkas L12:**
 
-```powershell
-Get-Content routes\console.php
-Get-Content app\Services\NotifikasiService.php
-Get-Content app\Services\CancelService.php
-Get-Content app\Services\BookingService.php
-```
+| Berkas | Lokasi | Catatan |
+|---|---|---|
+| `AutoCancelService.php` | `app/Services/` | Baru: pembatalan otomatis pesanan kedaluwarsa |
+| `PengingatService.php` | `app/Services/` | Baru: pengingat mulai dan selesai sewa |
+| `BatalkanKedaluwarsa.php` | `app/Console/Commands/` | Baru: perintah `booking:batal-kedaluwarsa` |
+| `KirimPengingat.php` | `app/Console/Commands/` | Baru: perintah `booking:kirim-pengingat` |
+| `EmailTemplateService.php` | `app/Services/` | Diubah: teks cadangan untuk templat pengingat bila baris di database hilang |
+| `EmailTemplateController.php` | `app/Http/Controllers/Admin/` | Diubah: templat pengingat bertanda "dikirim otomatis" |
+| `console.php` | `routes/` | Diubah: dua jadwal tiap 5 menit (`withoutOverlapping`) |
+| `index.blade.php` | `resources/views/admin/log/` | Diubah: aksi tanpa admin tampil dengan pelaku **Sistem** |
 
-**Hasil yang benar di akhir L12:** pesanan kedaluwarsa dibatalkan otomatis tanpa memengaruhi pesanan lain, pengingat terkirim sekali per pesanan (tidak dobel), tercatat di `email_logs`, dan commit `L12: scheduler batal otomatis dan pengingat`.
+**Perintah artisan:**
+
+| Perintah | Fungsi |
+|---|---|
+| `php artisan booking:batal-kedaluwarsa` | Batalkan pesanan `Menunggu Pembayaran` yang lewat batas bayar (opsi `--simulasi` hanya menampilkan daftar) |
+| `php artisan booking:kirim-pengingat` | Kirim pengingat mulai dan selesai (opsi `--simulasi` hanya menampilkan daftar) |
+| `php artisan schedule:list` | Lihat jadwal (kedua perintah di atas, `*/5 * * * *`) |
+| `php artisan schedule:work` | Menjalankan scheduler terus-menerus selama pengembangan lokal |
+
+**Aturan pembatalan otomatis:**
+- Hanya pesanan `Menunggu Pembayaran` yang `batas_bayar`-nya sudah lewat lebih dari **2 menit** (tenggang untuk pelanggan yang membayar di detik terakhir).
+- Sebelum membatalkan, status transaksi dicek ke Midtrans. Bila `settlement`, `capture`, atau `authorize` (uang sudah masuk), atau status tidak bisa dipastikan karena galat jaringan, pesanan **dilewati** dan dicoba lagi pada putaran berikutnya. Status 404 (pelanggan belum memilih metode bayar) aman dibatalkan. Pengaman ini penting karena webhook belum aktif di lokal.
+- Pembatalan dalam satu transaksi database dengan penguncian baris dan pemeriksaan ulang; pesanan yang punya pembayaran `Berhasil` tidak dibatalkan.
+- Efeknya: status `Dibatalkan`, `alasan_batal` berisi "Batas waktu pembayaran habis (dibatalkan otomatis).", percobaan bayar `Pending` menjadi `Dibatalkan`, pengantaran yang belum diterima ditutup, transaksi Midtrans yang belum dibayar dibatalkan (kegagalan hanya dicatat), dan jadwal dilepas.
+- Tercatat di log aktivitas dengan aksi `Batal Otomatis` tanpa admin (tampil sebagai **Sistem**).
+
+**Aturan pengingat email:**
+- **Pengingat mulai:** pesanan `Dibayar`, belum pernah diingatkan, jadwal mulai dalam 60 menit ke depan (belum lewat).
+- **Pengingat selesai:** pesanan `Sedang Disewa`, belum pernah diingatkan, jadwal selesai dalam 30 menit ke depan (belum lewat); pesanan yang sudah terlambat tidak diingatkan.
+- Karena pemeriksaan tiap 5 menit, email terkirim pada pemeriksaan pertama setelah melewati ambang (bisa meleset sampai 5 menit).
+- **Sekali per pesanan:** penanda diklaim secara atomik di database (pola yang sama dengan email pembayaran), jadi pemanggilan ganda tidak mengirim email dua kali.
+- Bila pengiriman gagal, penanda dilepas dan dicoba lagi 5 menit kemudian selama masih dalam jendela waktu; setiap percobaan tercatat di tabel `email_logs` (`Terkirim` atau `Gagal` beserta pesan galat).
+- Isi email memakai templat `pengingat_mulai` dan `pengingat_selesai` dari L10c, sehingga admin bisa menyuntingnya di halaman Templat Email.
+
+**Catatan email (SMTP diblokir jaringan):** `.env` semula memakai SMTP Gmail (`smtp.gmail.com:587`) dan koneksinya timeout (sekitar 21 detik per percobaan, tercatat `Gagal` di `email_logs`). Untuk prototipe, `MAIL_MAILER=log` dipakai (email tercatat di `storage/logs/laravel.log`); setelan SMTP disimpan sebagai komentar di `.env` dan bisa diaktifkan lagi bila koneksi mengizinkan.
+
+**Hasil tes (lolos):**
+- `booking:batal-kedaluwarsa`: simulasi menyebut pesanan kedaluwarsa, eksekusi membatalkan 1 pesanan (`PS5-V8TWZA`), eksekusi ulang `Dibatalkan: 0`; pesanan yang belum lewat batas bayar tidak tersentuh; log `Batal Otomatis` tercatat.
+- `booking:kirim-pengingat`: pesanan uji yang dijadwalkan mulai 30 menit lagi menerima pengingat mulai (`Terkirim: 1`, ulangan `0`); pesanan uji `Sedang Disewa` yang selesai 20 menit lagi menerima pengingat selesai (`Terkirim: 1`, ulangan `0`); `email_logs` mencatat `Terkirim`; data uji dikembalikan seperti semula.
+
+**Catatan isi templat:** templat `pengingat_mulai` dari seeder berbunyi "sewa dimulai 2 jam lagi", padahal pengingat dikirim sekitar 1 jam sebelum mulai. Sesuaikan teksnya lewat halaman **Templat Email** di panel admin (atau ubah `EmailTemplateSeeder`).
 
 ---
 
@@ -861,8 +890,8 @@ Get-Content app\Services\BookingService.php
 
 - **L6:** buat akun **Midtrans sandbox**; Client Key dan Server Key disimpan di `.env`. Pengujian webhook dari komputer lokal butuh alamat publik sementara (ngrok atau Cloudflare Tunnel).
 - **L7:** pengaturan email (SMTP uji seperti Mailtrap/Mailpit atau Gmail App Password); saat ini `MAIL_MAILER=log` (email hanya ditulis ke file log).
-- **L13:** hosting yang mendukung PHP 8.3+, MySQL, dan cron (untuk Scheduler) serta kemampuan menerima webhook publik.
-- **L12:** scheduler lokal dijalankan dengan `php artisan schedule:work`; email masih `MAIL_MAILER=log` (tercatat di `storage/logs/laravel.log`) kecuali diubah.
+- **L12:** scheduler lokal dijalankan dengan `php artisan schedule:work`; email memakai `MAIL_MAILER=log` (tercatat di `storage/logs/laravel.log`) karena SMTP Gmail diblokir jaringan.
+- **L13 (tidak dikerjakan, proyek ini prototipe):** bila suatu saat dilanjutkan ke produksi, dibutuhkan hosting PHP 8.3+, MySQL, cron (untuk Scheduler), dan alamat publik untuk webhook Midtrans.
 - **Sebelum dipakai sungguhan:** ganti password admin awal (`Admin123!`).
 
 ---
@@ -981,20 +1010,22 @@ Get-Content app\Services\BookingService.php
 - [x] Tes lolos (angka cocok dengan database dan dasbor)
 - [x] Commit `L11: laporan keuangan dan ekspor` dan README diperbarui sampai L11
 
-### L12 (berikutnya): scheduler
-- [ ] Output `routes/console.php`, `NotifikasiService.php`, `CancelService.php`, `BookingService.php` dikirim
-- [ ] Keputusan: waktu pengingat, email pembatalan otomatis, frekuensi scheduler
-- [ ] Pembatalan otomatis dan pengingat email
-- [ ] Commit `L12: scheduler batal otomatis dan pengingat`
+### L12
+- [x] Output `routes/console.php`, `NotifikasiService.php`, `CancelService.php`, `BookingService.php`, `EmailTemplateService.php`, `EmailTemplateController.php`, `TemplateMail.php` dikirim
+- [x] Keputusan: pengingat mulai 1 jam dan selesai 30 menit sebelum, pembatalan otomatis tanpa email, scheduler tiap 5 menit
+- [x] Migrasi penanda pengingat, pembatalan otomatis, pengingat email, jadwal
+- [x] Tes lolos (pembatalan tidak dobel, pengingat sekali per pesanan, data uji dikembalikan)
+- [x] Commit `L12: scheduler batal otomatis dan pengingat email` dan README diperbarui sampai L12
+
+### L13: tidak dikerjakan
+- [ ] Pengujian kriteria penerimaan PRD dan deploy dilewati karena proyek ini hanya prototipe
 
 ---
 
-## 14. Cara melanjutkan
+## 14. Status akhir proyek
 
-1. Selesaikan checklist langkah yang sedang berjalan.
-2. Kirim bukti: output perintah cek atau screenshot halaman.
-3. Tulis **"lanjut L12"** (atau langkah berikutnya).
+Proyek ini **prototipe** dan dinyatakan selesai di **L12**. L13 (pengujian kriteria penerimaan PRD dan deploy) tidak dikerjakan.
 
-Jika memulai percakapan baru, lampirkan README ini + `PRD_GameBox_Rent.pdf` + README dan zip proyek Apps Script lama (acuan aturan bisnis dan tes) + `stitch_prd_visual_interface_prototype.zip`, lalu tulis:
+Jika suatu saat dilanjutkan, lampirkan README ini + `PRD_GameBox_Rent.pdf` + `stitch_prd_visual_interface_prototype.zip`, lalu tulis:
 
-> Saya memindahkan proyek GameBox Rent dari Google Apps Script ke Laravel 13.40 (PHP 8.3, Blade + Tailwind + MySQL via Laragon di Windows, pembayaran Midtrans sandbox). L1, L2 (migrasi database + seeder), L3 (layout, login pelanggan dan admin terpisah, role + middleware), L4 (beranda dan katalog unit), L5 (booking: jadwal, bentrok + buffer, harga dihitung server), L6 (pembayaran Midtrans sandbox: popup Snap, cek status, kode konfirmasi, riwayat pesanan), L7 (invoice PDF dan email konfirmasi pembayaran), L8 (admin konfirmasi kode, serah terima, tandai selesai, armada), L9 (pelacakan pengantaran), L10a (dasbor admin KPI dan manajemen pesanan), L10b (admin perangkat dengan foto, harga paket, tanggal libur), L10c (admin pengaturan sistem, konten beranda, templat email), L10d (admin pelanggan dan log aktivitas), dan L11 (laporan keuangan dengan ekspor PDF dan Excel memakai phpoffice/phpspreadsheet) sudah selesai, lolos tes, dan di-commit. Baca README_Laravel.md. Lanjutkan dari **L12: scheduler (pembatalan otomatis dan pengingat email)**, step by step. Berikan kode LENGKAP per file (jangan potongan atau "cari baris"), tandai jelas file BARU atau TIMPA SELURUHNYA, beri README per langkah (jangan zip), dan jalankan satu perintah per baris.
+> Saya memindahkan proyek GameBox Rent dari Google Apps Script ke Laravel 13.40 (PHP 8.3, Blade + Tailwind + MySQL via Laragon di Windows, pembayaran Midtrans sandbox). L1 sampai L12 sudah selesai, lolos tes, dan di-commit: autentikasi dan peran, beranda dan katalog, booking (bentrok + buffer, harga dihitung server), pembayaran Midtrans sandbox, invoice PDF dan email, serah terima dan armada, pelacakan pengantaran, panel admin lengkap (dasbor KPI, pesanan, perangkat, harga, tanggal libur, pengaturan, konten beranda, templat email, pelanggan, log aktivitas, laporan keuangan dengan ekspor PDF/Excel), serta scheduler (batal otomatis dan pengingat email). Baca README_Laravel.md. L13 (pengujian dan deploy) belum dikerjakan. Berikan kode LENGKAP per file (jangan potongan atau "cari baris"), tandai jelas file BARU atau TIMPA SELURUHNYA, beri README per langkah (jangan zip), dan jalankan satu perintah per baris.
