@@ -20,13 +20,13 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Pembayaran-Midtrans_Sandbox-0A4DA2?style=flat-square" alt="Midtrans Sandbox">
-  <img src="https://img.shields.io/badge/Status-L11_selesai,_L12_berikutnya-2F6BFF?style=flat-square" alt="Status pengembangan">
+  <img src="https://img.shields.io/badge/Status-L12_selesai_(prototipe)-2F6BFF?style=flat-square" alt="Status pengembangan">
   <img src="https://img.shields.io/badge/Platform-Windows_%2B_Laragon-5DE6FF?style=flat-square" alt="Windows dan Laragon">
 </p>
 
 ---
 
-Sistem rental **PlayStation 4 & 5** berbasis web. Pelanggan memilih unit, jadwal, dan durasi sewa; sistem memastikan jadwal tidak bentrok, menghitung harga di server, dan (dalam pengembangan) memproses pembayaran online lewat Midtrans. Dibangun dengan **Laravel 13**, **Tailwind CSS**, dan **MySQL**.
+Sistem rental **PlayStation 4 & 5** berbasis web. Pelanggan memilih unit, jadwal, dan durasi sewa; sistem memastikan jadwal tidak bentrok, menghitung harga di server, dan memproses pembayaran online lewat Midtrans (mode sandbox). Dibangun dengan **Laravel 13**, **Tailwind CSS**, dan **MySQL**.
 
 > Proyek ini dimigrasikan dari prototipe Google Apps Script ke Laravel, dengan desain antarmuka dari prototipe Stitch. Pengembangan berjalan bertahap; lihat [Status pengembangan](#status-pengembangan).
 
@@ -57,12 +57,16 @@ Sistem rental **PlayStation 4 & 5** berbasis web. Pelanggan memilih unit, jadwal
 - Manajemen pelanggan admin: daftar dengan pencarian (nama, email, HP) dan filter status, detail pelanggan beserta ringkasan belanja dan riwayat pesanan, serta aktif/nonaktifkan akun (sesi pelanggan langsung diputus dan setiap perubahan tercatat di log)
 - Halaman log aktivitas admin (hanya baca) dengan filter admin, jenis aksi, rentang tanggal, dan pencarian keterangan
 - Laporan keuangan admin: pilih bulan atau rentang tanggal bebas, ringkasan pemasukan (per jenis unit, penerimaan, unit, dan harian), rincian per transaksi, serta ekspor PDF dan Excel (angka sama dengan dasbor)
+- Pembatalan otomatis pesanan yang melewati batas bayar (dengan pengecekan ke Midtrans agar pembayaran yang sudah masuk tidak ikut dibatalkan) dan pengingat email sebelum sewa mulai (1 jam) dan selesai (30 menit), dijalankan scheduler tiap 5 menit
 
 **Dalam pengembangan**
 
 - Webhook Midtrans untuk notifikasi pembayaran otomatis (butuh alamat publik; di lokal memakai tombol cek status)
-- Notifikasi email lanjutan (pengingat mulai dan selesai sewa)
-- Pembatalan otomatis dan pengingat lewat scheduler
+
+**Di luar cakupan prototipe**
+
+- Pengujian kriteria penerimaan dan deploy ke hosting (L13)
+- Email lewat SMTP sungguhan (prototipe memakai `MAIL_MAILER=log`, email tercatat di `storage/logs/laravel.log`)
 
 ## Teknologi
 
@@ -73,6 +77,7 @@ Sistem rental **PlayStation 4 & 5** berbasis web. Pelanggan memilih unit, jadwal
 | Database | MySQL |
 | Pembayaran | Midtrans Snap (sandbox) |
 | Ekspor laporan | DomPDF (PDF), PhpSpreadsheet (Excel) |
+| Penjadwalan | Laravel Scheduler (perintah artisan) |
 | Lingkungan pengembangan | Windows + Laragon |
 
 ## Aturan bisnis utama
@@ -85,6 +90,8 @@ Sistem rental **PlayStation 4 & 5** berbasis web. Pelanggan memilih unit, jadwal
 - Total belanja pelanggan dihitung dari pesanan berstatus `Dibayar`, `Sedang Disewa`, dan `Selesai`
 - Akun pelanggan yang dinonaktifkan tidak bisa masuk dan sesi yang sedang berjalan langsung diputus
 - Pemasukan laporan = pembayaran berhasil dari pesanan yang tidak dibatalkan (sama dengan dasbor); denda keterlambatan dilaporkan terpisah dan tidak dijumlahkan ke pemasukan
+- Pesanan `Menunggu Pembayaran` yang melewati batas bayar (ditambah tenggang 2 menit) dibatalkan otomatis; pesanan yang pembayarannya sudah masuk di Midtrans dilewati
+- Pengingat email dikirim sekali per pesanan (penanda di database mencegah email ganda)
 
 ## Menjalankan secara lokal
 
@@ -110,6 +117,19 @@ composer run dev
 
 Buka `http://localhost:8000`.
 
+Untuk mencoba pembatalan otomatis dan pengingat email, jalankan scheduler di terminal terpisah:
+
+```bash
+php artisan schedule:work
+```
+
+Atau jalankan perintahnya manual (opsi `--simulasi` hanya menampilkan daftar tanpa mengubah data):
+
+```bash
+php artisan booking:batal-kedaluwarsa
+php artisan booking:kirim-pengingat
+```
+
 | Peran | Alamat masuk | Akun |
 |---|---|---|
 | Pelanggan | `/masuk` (daftar di `/daftar`) | Buat sendiri lewat halaman daftar |
@@ -130,7 +150,9 @@ app/
   Services/                BookingService, PaymentService (Midtrans), InvoiceService (PDF), HandoverService (serah terima, denda),
                            DeliveryService (pengantaran), DashboardService (KPI), CancelService (pembatalan),
                            NotifikasiService + EmailTemplateService (email), SettingsService (pengaturan situs),
-                           ActivityLogger (pencatat log admin), ReportService + ReportExcelService (laporan keuangan dan ekspor)
+                           ActivityLogger (pencatat log admin), ReportService + ReportExcelService (laporan keuangan dan ekspor),
+                           AutoCancelService (batal otomatis), PengingatService (pengingat email)
+  Console/Commands/        booking:batal-kedaluwarsa, booking:kirim-pengingat
   Mail/                    Email pembayaran berhasil (lampiran invoice)
 database/
   migrations/              Skema database
@@ -140,6 +162,7 @@ resources/
   views/                   Layout, partial, beranda, booking, dasbor, auth, admin
 config/midtrans.php        Konfigurasi Midtrans (dibaca dari .env)
 routes/web.php             Seluruh route
+routes/console.php         Jadwal scheduler (tiap 5 menit)
 ```
 
 ## Keamanan
@@ -171,8 +194,8 @@ routes/web.php             Seluruh route
 | L10c | Admin: pengaturan sistem, konten, templat email | Selesai |
 | L10d | Admin: pelanggan dan log aktivitas | Selesai |
 | L11 | Laporan keuangan dan ekspor (PDF dan Excel) | Selesai |
-| L12 | Scheduler (batal otomatis, pengingat) | Berikutnya |
-| L13 | Pengujian dan deploy | Direncanakan |
+| L12 | Scheduler (batal otomatis, pengingat) | Selesai |
+| L13 | Pengujian dan deploy | Tidak dikerjakan (prototipe) |
 
 ## Penulis
 
