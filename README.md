@@ -20,7 +20,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Pembayaran-Midtrans_Sandbox-0A4DA2?style=flat-square" alt="Midtrans Sandbox">
-  <img src="https://img.shields.io/badge/Status-L10d_selesai,_L11_berikutnya-2F6BFF?style=flat-square" alt="Status pengembangan">
+  <img src="https://img.shields.io/badge/Status-L11_selesai,_L12_berikutnya-2F6BFF?style=flat-square" alt="Status pengembangan">
   <img src="https://img.shields.io/badge/Platform-Windows_%2B_Laragon-5DE6FF?style=flat-square" alt="Windows dan Laragon">
 </p>
 
@@ -56,12 +56,12 @@ Sistem rental **PlayStation 4 & 5** berbasis web. Pelanggan memilih unit, jadwal
 - Templat email yang bisa disunting admin, lengkap dengan pratinjau dan pengiriman email uji
 - Manajemen pelanggan admin: daftar dengan pencarian (nama, email, HP) dan filter status, detail pelanggan beserta ringkasan belanja dan riwayat pesanan, serta aktif/nonaktifkan akun (sesi pelanggan langsung diputus dan setiap perubahan tercatat di log)
 - Halaman log aktivitas admin (hanya baca) dengan filter admin, jenis aksi, rentang tanggal, dan pencarian keterangan
+- Laporan keuangan admin: pilih bulan atau rentang tanggal bebas, ringkasan pemasukan (per jenis unit, penerimaan, unit, dan harian), rincian per transaksi, serta ekspor PDF dan Excel (angka sama dengan dasbor)
 
 **Dalam pengembangan**
 
 - Webhook Midtrans untuk notifikasi pembayaran otomatis (butuh alamat publik; di lokal memakai tombol cek status)
 - Notifikasi email lanjutan (pengingat mulai dan selesai sewa)
-- Laporan keuangan dengan ekspor PDF dan Excel
 - Pembatalan otomatis dan pengingat lewat scheduler
 
 ## Teknologi
@@ -72,6 +72,7 @@ Sistem rental **PlayStation 4 & 5** berbasis web. Pelanggan memilih unit, jadwal
 | Tampilan | Blade, Tailwind CSS v4, Vite |
 | Database | MySQL |
 | Pembayaran | Midtrans Snap (sandbox) |
+| Ekspor laporan | DomPDF (PDF), PhpSpreadsheet (Excel) |
 | Lingkungan pengembangan | Windows + Laragon |
 
 ## Aturan bisnis utama
@@ -83,6 +84,7 @@ Sistem rental **PlayStation 4 & 5** berbasis web. Pelanggan memilih unit, jadwal
 - Setiap booking menyimpan salinan harga, buffer, dan denda saat dibuat, sehingga perubahan pengaturan tidak mengubah pesanan lama
 - Total belanja pelanggan dihitung dari pesanan berstatus `Dibayar`, `Sedang Disewa`, dan `Selesai`
 - Akun pelanggan yang dinonaktifkan tidak bisa masuk dan sesi yang sedang berjalan langsung diputus
+- Pemasukan laporan = pembayaran berhasil dari pesanan yang tidak dibatalkan (sama dengan dasbor); denda keterlambatan dilaporkan terpisah dan tidak dijumlahkan ke pemasukan
 
 ## Menjalankan secara lokal
 
@@ -123,12 +125,12 @@ app/
   Http/Middleware/         EnsureRole (pembatas akses pelanggan/admin)
   Http/Requests/           Validasi form booking
   Models/                  User, Console, Package, Booking, Payment, Delivery, DeliveryEvent
-  Http/Controllers/Admin/  Dasbor, pesanan, pelanggan, konfirmasi kode (serah terima), armada, pengiriman,
+  Http/Controllers/Admin/  Dasbor, pesanan, pelanggan, laporan, konfirmasi kode (serah terima), armada, pengiriman,
                            perangkat, harga, tanggal libur, pengaturan, konten beranda, templat email, log aktivitas
   Services/                BookingService, PaymentService (Midtrans), InvoiceService (PDF), HandoverService (serah terima, denda),
                            DeliveryService (pengantaran), DashboardService (KPI), CancelService (pembatalan),
                            NotifikasiService + EmailTemplateService (email), SettingsService (pengaturan situs),
-                           ActivityLogger (pencatat log admin)
+                           ActivityLogger (pencatat log admin), ReportService + ReportExcelService (laporan keuangan dan ekspor)
   Mail/                    Email pembayaran berhasil (lampiran invoice)
 database/
   migrations/              Skema database
@@ -149,6 +151,7 @@ routes/web.php             Seluruh route
 - Pelanggan hanya dapat melihat pesanan miliknya sendiri
 - Halaman pelanggan di panel admin hanya menampilkan akun berperan pelanggan; akun admin tidak bisa dibuka atau diubah dari sana
 - Log aktivitas admin bersifat hanya baca dari panel (tidak bisa diubah atau dihapus)
+- Ekspor Excel menulis semua teks sebagai string, sehingga isi seperti `=1+1` tidak dieksekusi sebagai rumus; setiap ekspor tercatat di log aktivitas
 
 ## Status pengembangan
 
@@ -167,8 +170,8 @@ routes/web.php             Seluruh route
 | L10b | Admin: perangkat dan foto, harga paket, tanggal libur | Selesai |
 | L10c | Admin: pengaturan sistem, konten, templat email | Selesai |
 | L10d | Admin: pelanggan dan log aktivitas | Selesai |
-| L11 | Laporan keuangan dan ekspor | Berikutnya |
-| L12 | Scheduler (batal otomatis, pengingat) | Direncanakan |
+| L11 | Laporan keuangan dan ekspor (PDF dan Excel) | Selesai |
+| L12 | Scheduler (batal otomatis, pengingat) | Berikutnya |
 | L13 | Pengujian dan deploy | Direncanakan |
 
 ## Penulis
