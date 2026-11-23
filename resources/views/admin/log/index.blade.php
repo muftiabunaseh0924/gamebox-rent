@@ -45,7 +45,7 @@
         <thead class="border-b border-surface-variant/40 text-xs uppercase tracking-wider text-outline">
             <tr>
                 <th class="px-4 py-3">Waktu</th>
-                <th class="px-4 py-3">Admin</th>
+                <th class="px-4 py-3">Pelaku</th>
                 <th class="px-4 py-3">Aksi</th>
                 <th class="px-4 py-3">Keterangan</th>
             </tr>
@@ -57,7 +57,7 @@
                         <p>{{ \Illuminate\Support\Carbon::parse($l->created_at)->format('d-m-Y') }}</p>
                         <p class="text-xs text-outline">{{ \Illuminate\Support\Carbon::parse($l->created_at)->format('H:i:s') }}</p>
                     </td>
-                    <td class="px-4 py-3">{{ $l->admin ?: '-' }}</td>
+                    <td class="px-4 py-3">{{ $l->admin ?: 'Sistem' }}</td>
                     <td class="px-4 py-3">
                         <span class="rounded-full bg-primary-container/20 px-3 py-1 font-headline text-xs font-semibold tracking-wider text-primary">{{ $l->aksi }}</span>
                     </td>

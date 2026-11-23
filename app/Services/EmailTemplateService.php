@@ -13,6 +13,14 @@ class EmailTemplateService
             'Pembayaran berhasil - Kode {{kode}}',
             'Halo {{nama}}, kode konfirmasi kamu: {{kode}}. Jadwal: {{jadwal}}. Invoice terlampir.',
         ],
+        'pengingat_mulai' => [
+            'Pengingat: sewa dimulai {{waktu_mulai}} - {{kode_booking}}',
+            'Halo {{nama}}, sewa {{unit}} kamu akan dimulai pada {{waktu_mulai}}. Siapkan kode konfirmasi serah terima: {{kode}}. Kode booking: {{kode_booking}}.',
+        ],
+        'pengingat_selesai' => [
+            'Pengingat: sewa berakhir {{waktu_selesai}} - {{kode_booking}}',
+            'Halo {{nama}}, sewa {{unit}} kamu akan berakhir pada {{waktu_selesai}}. Mohon kembalikan unit tepat waktu agar tidak terkena denda keterlambatan.',
+        ],
     ];
 
     /** @return array{0: string, 1: string} [subjek, isi] dengan placeholder {{...}} terisi */
