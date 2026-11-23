@@ -4,7 +4,7 @@ Pemindahan proyek **GameBox Rent** dari Google Apps Script + Google Sheets ke **
 
 Proyek lama (Apps Script, Langkah 1 sampai 6 selesai dan lolos tes) **tetap disimpan sebagai acuan** aturan bisnis, daftar tes, dan desain. Jangan dihapus.
 
-**Posisi sekarang: L1 sampai L10d selesai dan lolos tes (L10 dibagi menjadi L10a sampai L10d, semuanya selesai). Berikutnya L11 (laporan keuangan dan ekspor PDF/Excel).**
+**Posisi sekarang: L1 sampai L11 selesai dan lolos tes (L10 dibagi menjadi L10a sampai L10d, semuanya selesai; L11 laporan keuangan dengan ekspor PDF dan Excel selesai). Berikutnya L12 (scheduler: batal otomatis dan pengingat email).**
 
 ---
 
@@ -38,8 +38,8 @@ Proyek lama (Apps Script, Langkah 1 sampai 6 selesai dan lolos tes) **tetap disi
 | L8 | Admin: konfirmasi kode, serah terima, tandai selesai, lokasi konsol | **Selesai, lolos semua tes** (bagian 10.11) |
 | L9 | Pelacakan kurir (berbasis status) | **Selesai, lolos semua tes** (bagian 10.12) |
 | **L10** | Admin: dashboard, pesanan, jadwal, perangkat, harga, pengaturan, pelanggan, log. Dibagi: **L10a** dasbor KPI + manajemen pesanan (**selesai**, bagian 10.13); **L10b** perangkat + foto, harga paket, tanggal libur (**selesai**, bagian 10.14); **L10c** pengaturan sistem, konten beranda, templat email (**selesai**, bagian 10.15); **L10d** pelanggan + log aktivitas (**selesai**, bagian 10.16) | **Selesai, lolos semua tes** |
-| **L11** | Laporan keuangan + ekspor PDF dan Excel | **Berikutnya** (bagian 10.17) |
-| L12 | Scheduler (batal otomatis, pengingat email) | Belum |
+| **L11** | Laporan keuangan + ekspor PDF dan Excel | **Selesai, lolos semua tes** (bagian 10.17) |
+| **L12** | Scheduler (batal otomatis, pengingat email) | **Berikutnya** (bagian 10.18) |
 | L13 | Pengujian (kriteria penerimaan PRD) + deploy | Belum |
 
 ---
@@ -214,7 +214,8 @@ Riwayat saat ini:
 | (L10a) | `L10a: dasbor dan manajemen pesanan` |
 | (L10b) | `L10b: perangkat, harga, tanggal libur` |
 | (L10c) | `L10c: pengaturan, konten, templat email` |
-| (L10d) | `L10d: pelanggan dan log aktivitas` (sesuaikan dengan pesan commit yang dipakai saat push) |
+| (L10d) | `L10c-L10d: pengaturan, konten, templat email, pelanggan, log aktivitas` (commit `e2d1f73`) |
+| (L11) | `L11: laporan keuangan dan ekspor` |
 
 Format commit tiap langkah: `Lx: ringkasan`. Sebelum `git add .`, cek `git status` dan pastikan `.env` tidak muncul (sudah ada di `.gitignore` bawaan).
 
@@ -271,7 +272,7 @@ PATH PHP saat ini: `D:\laragon\bin\php\php-8.3.36-Win32-vs16-x64`.
 
 ---
 
-## 10. Status L3 sampai L10d (selesai) dan rancangan L11
+## 10. Status L3 sampai L11 (selesai) dan rancangan L12
 
 ### 10.1 Keputusan L3 yang dipakai
 
@@ -742,27 +743,75 @@ PATH PHP saat ini: `D:\laragon\bin\php\php-8.3.36-Win32-vs16-x64`.
 
 **Catatan:** uji nonaktifkan akun hanya pada akun pelanggan uji, bukan akun yang dipakai sungguhan, dan kembalikan ke `Aktif` setelah selesai.
 
-### 10.17 Rancangan L11: laporan keuangan dan ekspor PDF/Excel (untuk dikonfirmasi di awal L11)
+### 10.17 Status L11 (selesai): laporan keuangan dan ekspor PDF/Excel
 
-**Isi L11:**
-- Halaman **Laporan** di panel admin (menu "Laporan" di sidebar masih bertanda Segera) berdasarkan layar Stitch "laporan keuangan": ringkasan pemasukan per periode, rincian transaksi, pemasukan per jenis unit, stik, dan denda.
-- **Ekspor PDF** (DomPDF sudah terpasang sejak L7) dan **ekspor Excel** (paket baru, dipilih di awal L11; pemasangannya butuh hotspot HP bila WiFi memblokir Packagist).
-- Aturan hitung mengikuti dasbor L10a: pemasukan dari `payments` berstatus `Berhasil` untuk pesanan yang tidak `Dibatalkan`, berdasarkan `waktu_bayar`.
+**Keputusan yang dipakai:** periode memakai keduanya (tab cepat Bulan Ini/Bulan Lalu dan dropdown 12 bulan terakhir, plus rentang tanggal bebas; bila tanggal diisi, tanggal mengalahkan bulan; maksimal 366 hari); ekspor memuat ringkasan dan rincian per pesanan; Excel memakai `phpoffice/phpspreadsheet` langsung (bukan `maatwebsite/excel`); PDF memakai DomPDF yang sudah terpasang sejak L7. Tidak ada migrasi baru.
 
-**Pertanyaan yang dikonfirmasi di awal L11:**
-1. Periode laporan: bulan, rentang tanggal bebas, atau keduanya?
-2. Kolom yang diekspor: ringkasan saja, atau juga rincian per pesanan?
-3. Paket Excel: `maatwebsite/excel` atau `phpoffice/phpspreadsheet` langsung?
+**Paket baru:** `phpoffice/phpspreadsheet` ^5.11 (terpasang v5.11.0; `composer.json` dan `composer.lock` berubah). Ekstensi PHP yang dibutuhkan sudah lengkap (`gd`, `mbstring`, `xml`, `zip`). Pemasangannya butuh hotspot HP bila WiFi memblokir Packagist.
 
-**Yang dibutuhkan di awal L11 (kirim outputnya):**
+**Berkas L11:**
+
+| Berkas | Lokasi | Catatan |
+|---|---|---|
+| `ReportService.php` | `app/Services/` | Baru: ringkasan, per jenis, per penerimaan, per unit, harian, stik, denda, dan rincian transaksi |
+| `ReportExcelService.php` | `app/Services/` | Baru: menyusun file Excel 4 lembar |
+| `ReportController.php` | `app/Http/Controllers/Admin/` | Baru: `index`, `pdf`, `excel`; penentuan periode dipakai bersama |
+| `index.blade.php`, `pdf.blade.php` | `resources/views/admin/laporan/` | Baru: halaman Laporan dan templat PDF |
+| `web.php` | `routes/` | Diubah (tabel di bawah) |
+| `admin.blade.php` | `resources/views/layouts/` | Diubah: menu **Laporan** aktif (setelah Pelanggan), daftar "Segera" kini kosong |
+
+**Route L11 (semua `auth` + `role:admin`):**
+
+| URL | Nama | Fungsi |
+|---|---|---|
+| `GET /admin/laporan` | `admin.laporan` | Halaman laporan dengan pilihan periode |
+| `GET /admin/laporan/pdf` | `admin.laporan.pdf` | Unduh PDF (throttle 20/menit) |
+| `GET /admin/laporan/excel` | `admin.laporan.excel` | Unduh Excel (throttle 20/menit) |
+
+Parameter periode: `bulan=YYYY-MM` atau `dari=YYYY-MM-DD&sampai=YYYY-MM-DD`. Isian yang tidak lengkap atau tidak valid dikembalikan ke halaman Laporan dengan pesan kesalahan, tanpa menghasilkan file.
+
+**Aturan hitung (sama dengan dasbor L10a):**
+- **Pemasukan dan transaksi:** pembayaran `Berhasil` pada periode (berdasarkan `waktu_bayar`) dari pesanan yang bukan `Dibatalkan`.
+- **Denda keterlambatan:** dihitung terpisah dari pesanan `Selesai` yang `waktu_kembali`-nya masuk periode dan berdenda; **tidak** dijumlahkan ke pemasukan.
+- **Dibatalkan tetapi sudah dibayar:** hanya ditampilkan sebagai catatan (jumlah dan nilai), bukan pemasukan; refund dilakukan manual di dasbor Midtrans.
+- Rincian per transaksi diurutkan dari waktu bayar terbaru; halaman memakai paginasi 20 baris.
+
+**Ekspor:**
+- **PDF:** A4 landscape, berisi ringkasan, tabel per jenis, per penerimaan, per unit, harian, dan rincian; rincian dibatasi 2.000 baris terbaru dengan catatan bila lebih (data lengkap ada di Excel).
+- **Excel:** 4 lembar (Ringkasan, Harian, Per Unit, Rincian); angka dan tanggal bertipe asli (bukan teks) dengan format Rupiah; baris Total memakai rumus `SUM`; lembar Rincian punya filter dan baris beku; tanpa batas baris (dibaca bertahap dengan `cursor()`).
+- **Keamanan Excel:** semua teks ditulis dengan `setCellValueExplicit` sebagai string, sehingga isi seperti `=1+1` pada nama pelanggan tidak dieksekusi sebagai rumus.
+- Setiap unduhan PDF dan Excel tercatat di log aktivitas dengan aksi `Ekspor Laporan`.
+
+**Hasil tes:** angka database untuk November 2026 (5 transaksi, Rp 470.000, rata-rata Rp 94.000) cocok dengan halaman Laporan dan dasbor; PDF terunduh dengan isi yang sama; Excel terunduh dan kedua ekspor tercatat di `activity_logs` (`Ekspor PDF` dan `Ekspor Excel` untuk Bulan November 2026); validasi periode tidak lengkap mengembalikan ke halaman Laporan.
+
+**Cek angka langsung di database (acuan tes laporan):**
 
 ```powershell
-Get-Content app\Services\DashboardService.php
-Get-Content composer.json
-Get-Content resources\views\admin\dashboard.blade.php
+mysql -u root gamebox_rent -e "SELECT COUNT(DISTINCT b.id) AS transaksi, COALESCE(SUM(p.nominal),0) AS pemasukan FROM payments p JOIN bookings b ON b.id=p.booking_id WHERE p.status_pembayaran='Berhasil' AND b.status_booking<>'Dibatalkan' AND DATE_FORMAT(p.waktu_bayar,'%Y-%m')='2026-11';"
 ```
 
-**Hasil yang benar di akhir L11:** angka laporan sama dengan angka dasbor untuk periode yang sama dan dengan hitungan langsung di database; ekspor PDF dan Excel terunduh dengan isi yang sama; commit `L11: laporan keuangan dan ekspor`.
+### 10.18 Rancangan L12: scheduler, batal otomatis dan pengingat email (untuk dikonfirmasi di awal L12)
+
+**Isi L12 (menurut roadmap):**
+- **Pembatalan otomatis** pesanan `Menunggu Pembayaran` yang melewati `batas_bayar` (status dirapikan dan jadwal dilepas; saat ini jadwal hanya "terbuka lagi" secara hitungan).
+- **Pengingat email** sebelum sewa mulai dan sebelum sewa selesai, memakai templat email dari L10c dan `NotifikasiService`.
+- Penjadwalan lewat Laravel scheduler; di Windows + Laragon dijalankan dengan `php artisan schedule:work` selama pengembangan.
+
+**Pertanyaan yang dikonfirmasi di awal L12:**
+1. Berapa lama sebelum mulai dan sebelum selesai pengingat dikirim?
+2. Apakah pembatalan otomatis juga mengirim email ke pelanggan?
+3. Seberapa sering scheduler memeriksa (misalnya tiap menit atau tiap 5 menit)?
+
+**Yang dibutuhkan di awal L12 (kirim outputnya):**
+
+```powershell
+Get-Content routes\console.php
+Get-Content app\Services\NotifikasiService.php
+Get-Content app\Services\CancelService.php
+Get-Content app\Services\BookingService.php
+```
+
+**Hasil yang benar di akhir L12:** pesanan kedaluwarsa dibatalkan otomatis tanpa memengaruhi pesanan lain, pengingat terkirim sekali per pesanan (tidak dobel), tercatat di `email_logs`, dan commit `L12: scheduler batal otomatis dan pengingat`.
 
 ---
 
@@ -813,7 +862,7 @@ Get-Content resources\views\admin\dashboard.blade.php
 - **L6:** buat akun **Midtrans sandbox**; Client Key dan Server Key disimpan di `.env`. Pengujian webhook dari komputer lokal butuh alamat publik sementara (ngrok atau Cloudflare Tunnel).
 - **L7:** pengaturan email (SMTP uji seperti Mailtrap/Mailpit atau Gmail App Password); saat ini `MAIL_MAILER=log` (email hanya ditulis ke file log).
 - **L13:** hosting yang mendukung PHP 8.3+, MySQL, dan cron (untuk Scheduler) serta kemampuan menerima webhook publik.
-- **L11:** paket ekspor Excel (belum dipasang) butuh `composer require`; gunakan hotspot HP bila WiFi memblokir Packagist.
+- **L12:** scheduler lokal dijalankan dengan `php artisan schedule:work`; email masih `MAIL_MAILER=log` (tercatat di `storage/logs/laravel.log`) kecuali diubah.
 - **Sebelum dipakai sungguhan:** ganti password admin awal (`Admin123!`).
 
 ---
@@ -923,11 +972,20 @@ Get-Content resources\views\admin\dashboard.blade.php
 - [x] Tes lolos (4 route, nonaktifkan dan aktifkan akun, isi `activity_logs`)
 - [x] Commit L10d dan README diperbarui sampai L10d
 
-### L11 (berikutnya): laporan keuangan dan ekspor
-- [ ] Output `DashboardService.php`, `composer.json`, dan `dashboard.blade.php` dikirim
-- [ ] Keputusan: periode laporan, kolom ekspor, paket Excel
-- [ ] Halaman Laporan, ekspor PDF dan Excel
-- [ ] Commit `L11: laporan keuangan dan ekspor`
+### L11
+- [x] Output `DashboardService.php`, `composer.json`, dan `dashboard.blade.php` dikirim
+- [x] Keputusan: periode (bulan + rentang tanggal), ekspor ringkasan + rincian, Excel `phpoffice/phpspreadsheet`
+- [x] `phpoffice/phpspreadsheet` terpasang (v5.11.0)
+- [x] Halaman Laporan (periode, ringkasan, per jenis, penerimaan, unit, harian, rincian)
+- [x] Ekspor PDF dan Excel (tercatat di log aktivitas)
+- [x] Tes lolos (angka cocok dengan database dan dasbor)
+- [x] Commit `L11: laporan keuangan dan ekspor` dan README diperbarui sampai L11
+
+### L12 (berikutnya): scheduler
+- [ ] Output `routes/console.php`, `NotifikasiService.php`, `CancelService.php`, `BookingService.php` dikirim
+- [ ] Keputusan: waktu pengingat, email pembatalan otomatis, frekuensi scheduler
+- [ ] Pembatalan otomatis dan pengingat email
+- [ ] Commit `L12: scheduler batal otomatis dan pengingat`
 
 ---
 
@@ -935,8 +993,8 @@ Get-Content resources\views\admin\dashboard.blade.php
 
 1. Selesaikan checklist langkah yang sedang berjalan.
 2. Kirim bukti: output perintah cek atau screenshot halaman.
-3. Tulis **"lanjut L11"** (atau langkah berikutnya).
+3. Tulis **"lanjut L12"** (atau langkah berikutnya).
 
 Jika memulai percakapan baru, lampirkan README ini + `PRD_GameBox_Rent.pdf` + README dan zip proyek Apps Script lama (acuan aturan bisnis dan tes) + `stitch_prd_visual_interface_prototype.zip`, lalu tulis:
 
-> Saya memindahkan proyek GameBox Rent dari Google Apps Script ke Laravel 13.40 (PHP 8.3, Blade + Tailwind + MySQL via Laragon di Windows, pembayaran Midtrans sandbox). L1, L2 (migrasi database + seeder), L3 (layout, login pelanggan dan admin terpisah, role + middleware), L4 (beranda dan katalog unit), L5 (booking: jadwal, bentrok + buffer, harga dihitung server), L6 (pembayaran Midtrans sandbox: popup Snap, cek status, kode konfirmasi, riwayat pesanan), L7 (invoice PDF dan email konfirmasi pembayaran), L8 (admin konfirmasi kode, serah terima, tandai selesai, armada), L9 (pelacakan pengantaran), L10a (dasbor admin KPI dan manajemen pesanan), L10b (admin perangkat dengan foto, harga paket, tanggal libur), L10c (admin pengaturan sistem, konten beranda, templat email), dan L10d (admin pelanggan dan log aktivitas) sudah selesai, lolos tes, dan di-commit. Baca README_Laravel.md. Lanjutkan dari **L11: laporan keuangan dan ekspor PDF/Excel**, step by step. Berikan kode LENGKAP per file (jangan potongan atau "cari baris"), tandai jelas file BARU atau TIMPA SELURUHNYA, beri README per langkah (jangan zip), dan jalankan satu perintah per baris.
+> Saya memindahkan proyek GameBox Rent dari Google Apps Script ke Laravel 13.40 (PHP 8.3, Blade + Tailwind + MySQL via Laragon di Windows, pembayaran Midtrans sandbox). L1, L2 (migrasi database + seeder), L3 (layout, login pelanggan dan admin terpisah, role + middleware), L4 (beranda dan katalog unit), L5 (booking: jadwal, bentrok + buffer, harga dihitung server), L6 (pembayaran Midtrans sandbox: popup Snap, cek status, kode konfirmasi, riwayat pesanan), L7 (invoice PDF dan email konfirmasi pembayaran), L8 (admin konfirmasi kode, serah terima, tandai selesai, armada), L9 (pelacakan pengantaran), L10a (dasbor admin KPI dan manajemen pesanan), L10b (admin perangkat dengan foto, harga paket, tanggal libur), L10c (admin pengaturan sistem, konten beranda, templat email), L10d (admin pelanggan dan log aktivitas), dan L11 (laporan keuangan dengan ekspor PDF dan Excel memakai phpoffice/phpspreadsheet) sudah selesai, lolos tes, dan di-commit. Baca README_Laravel.md. Lanjutkan dari **L12: scheduler (pembatalan otomatis dan pengingat email)**, step by step. Berikan kode LENGKAP per file (jangan potongan atau "cari baris"), tandai jelas file BARU atau TIMPA SELURUHNYA, beri README per langkah (jangan zip), dan jalankan satu perintah per baris.
