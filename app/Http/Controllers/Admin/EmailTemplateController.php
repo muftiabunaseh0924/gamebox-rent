@@ -19,11 +19,11 @@ class EmailTemplateController extends Controller
 {
     /** jenis_email => [nama, dipakai sekarang?, keterangan] */
     private const JENIS = [
-        'booking_dibuat' => ['Booking dibuat', false, 'Belum dikirim otomatis (disiapkan untuk tahap pengingat dan scheduler, L12).'],
+        'booking_dibuat' => ['Booking dibuat', false, 'Belum dikirim otomatis (disiapkan, belum dipakai di versi prototipe).'],
         'pembayaran_berhasil' => ['Pembayaran berhasil', true, 'Dikirim sekali setelah pembayaran sukses, dengan lampiran invoice PDF.'],
-        'pengingat_mulai' => ['Pengingat mulai sewa', false, 'Belum dikirim otomatis (L12).'],
-        'pengingat_selesai' => ['Pengingat selesai sewa', false, 'Belum dikirim otomatis (L12).'],
-        'terlambat' => ['Keterlambatan', false, 'Belum dikirim otomatis (L12).'],
+        'pengingat_mulai' => ['Pengingat mulai sewa', true, 'Dikirim otomatis oleh scheduler sekitar 1 jam sebelum sewa mulai, sekali per pesanan.'],
+        'pengingat_selesai' => ['Pengingat selesai sewa', true, 'Dikirim otomatis oleh scheduler sekitar 30 menit sebelum sewa selesai, sekali per pesanan.'],
+        'terlambat' => ['Keterlambatan', false, 'Belum dikirim otomatis (disiapkan, belum dipakai di versi prototipe).'],
         'dibatalkan' => ['Pesanan dibatalkan', true, 'Dikirim saat admin membatalkan pesanan.'],
         'terima_kasih' => ['Terima kasih', true, 'Dikirim saat penyewaan ditandai selesai.'],
     ];
