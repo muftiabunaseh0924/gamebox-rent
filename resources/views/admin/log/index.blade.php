@@ -33,14 +33,36 @@
     <input type="date" name="sampai" value="{{ $filter['sampai'] ?? '' }}" class="input-field" aria-label="Sampai tanggal">
 
     <div class="flex gap-2 sm:col-span-2 lg:col-span-6 lg:justify-end">
-        <button type="submit" class="btn-primary !px-4"><span class="material-symbols-outlined text-[18px]">search</span> Cari</button>
+        <button type="submit" class="btn-primary flex-1 !px-4 sm:flex-none"><span class="material-symbols-outlined text-[18px]">search</span> Cari</button>
         <a href="{{ route('admin.log') }}" class="btn-secondary !px-3" title="Atur ulang">
             <span class="material-symbols-outlined text-[18px]">restart_alt</span>
         </a>
     </div>
 </form>
 
-<div class="card mt-4 overflow-x-auto !p-0">
+{{-- Tampilan HP: daftar kartu --}}
+<div class="mt-4 space-y-3 md:hidden">
+    @forelse ($log as $l)
+        <div class="card !p-4">
+            <div class="flex items-start justify-between gap-3">
+                <span class="min-w-0 break-words rounded-full bg-primary-container/20 px-3 py-1 font-headline text-[11px] font-semibold tracking-wider text-primary">{{ $l->aksi }}</span>
+                <p class="shrink-0 text-right text-xs text-outline">
+                    {{ \Illuminate\Support\Carbon::parse($l->created_at)->format('d-m-Y') }}<br>
+                    {{ \Illuminate\Support\Carbon::parse($l->created_at)->format('H:i:s') }}
+                </p>
+            </div>
+            <p class="mt-3 break-words text-sm text-on-surface-variant">{{ $l->detail ?: '-' }}</p>
+            <p class="mt-2 flex items-center gap-1 text-xs text-outline">
+                <span class="material-symbols-outlined text-[16px]">person</span> {{ $l->admin ?: 'Sistem' }}
+            </p>
+        </div>
+    @empty
+        <div class="card !p-8 text-center text-sm text-on-surface-variant">Tidak ada log yang cocok dengan filter.</div>
+    @endforelse
+</div>
+
+{{-- Tampilan tablet dan desktop: tabel --}}
+<div class="card mt-4 hidden overflow-x-auto !p-0 md:block">
     <table class="w-full min-w-[760px] text-left text-sm">
         <thead class="border-b border-surface-variant/40 text-xs uppercase tracking-wider text-outline">
             <tr>

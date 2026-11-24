@@ -29,6 +29,23 @@
     --color-error-container: #93000a;
 }
 
+/* Alpine: sembunyikan elemen x-cloak sampai Alpine siap, agar tidak berkedip saat halaman dimuat. */
+[x-cloak] {
+    display: none !important;
+}
+
+/* Item menu muncul bergantian. Animasi CSS otomatis mengulang setiap panel dibuka kembali
+   (display: none -> tampil), berbeda dengan transisi yang tidak jalan pada elemen tersembunyi. */
+@keyframes menu-item-in {
+    from { opacity: 0; transform: translateX(-14px); }
+    to { opacity: 1; transform: none; }
+}
+
+@keyframes menu-item-down {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: none; }
+}
+
 @layer base {
     html { color-scheme: dark; }
     body { @apply bg-surface text-on-surface antialiased; }
@@ -52,5 +69,26 @@
     }
     .card {
         @apply rounded-xl border border-primary-container/15 bg-surface-container-low p-6;
+    }
+    .menu-item-in {
+        animation: menu-item-in 0.3s ease-out both;
+        animation-delay: var(--d, 0ms);
+    }
+    .menu-item-down {
+        animation: menu-item-down 0.3s ease-out both;
+        animation-delay: var(--d, 0ms);
+    }
+}
+
+/* Hormati pengaturan "kurangi gerakan" di perangkat pengguna. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        transition-delay: 0s !important;
+        scroll-behavior: auto !important;
     }
 }

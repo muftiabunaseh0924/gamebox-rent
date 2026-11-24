@@ -17,10 +17,10 @@
     </div>
 @endif
 
-<div class="flex flex-wrap gap-2">
+<div class="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:overflow-visible md:px-0 md:pb-0">
     @foreach ($labelStatus as $kunci => $nama)
         <a href="{{ route('admin.pelanggan', array_merge(request()->except('page', 'status'), ['status' => $kunci !== '' ? $kunci : null])) }}"
-           class="rounded-lg px-3 py-2 font-headline text-xs font-semibold transition
+           class="shrink-0 whitespace-nowrap rounded-lg px-3 py-2 font-headline text-xs font-semibold transition
            {{ $statusAktif === $kunci ? 'bg-primary-container text-on-surface' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
             {{ $nama }} <span class="ml-1 rounded-full bg-black/20 px-2 py-0.5">{{ $jumlah[$kunci] ?? 0 }}</span>
         </a>
@@ -38,7 +38,36 @@
     </div>
 </form>
 
-<div class="card mt-4 overflow-x-auto !p-0">
+{{-- Tampilan HP: daftar kartu --}}
+<div class="mt-4 space-y-3 md:hidden">
+    @forelse ($pelanggan as $p)
+        <a href="{{ route('admin.pelanggan.show', $p) }}"
+           class="card block !p-4 transition hover:border-cyan-400/40 active:scale-[0.99]">
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="truncate font-semibold text-secondary">{{ $p->name }}</p>
+                    <p class="truncate text-xs text-on-surface-variant">{{ $p->email }}</p>
+                </div>
+                <span class="shrink-0 rounded-full px-3 py-1 font-headline text-[11px] font-semibold uppercase tracking-wider
+                    {{ $p->isActive() ? 'bg-emerald-500/15 text-emerald-300' : 'bg-error-container/40 text-error' }}">
+                    {{ $p->isActive() ? 'Aktif' : 'Nonaktif' }}
+                </span>
+            </div>
+
+            <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-surface-variant/40 pt-3 text-sm">
+                <div><dt class="text-xs text-outline">No. HP</dt><dd>{{ $p->no_hp ?: '-' }}</dd></div>
+                <div><dt class="text-xs text-outline">Terdaftar</dt><dd>{{ $p->created_at->format('d-m-Y') }}</dd></div>
+                <div><dt class="text-xs text-outline">Pesanan</dt><dd>{{ $p->bookings_count }}</dd></div>
+                <div><dt class="text-xs text-outline">Total belanja</dt><dd class="font-semibold">{{ $rp($p->total_belanja ?? 0) }}</dd></div>
+            </dl>
+        </a>
+    @empty
+        <div class="card !p-8 text-center text-sm text-on-surface-variant">Tidak ada pelanggan yang cocok dengan filter.</div>
+    @endforelse
+</div>
+
+{{-- Tampilan tablet dan desktop: tabel --}}
+<div class="card mt-4 hidden overflow-x-auto !p-0 md:block">
     <table class="w-full min-w-[760px] text-left text-sm">
         <thead class="border-b border-surface-variant/40 text-xs uppercase tracking-wider text-outline">
             <tr>

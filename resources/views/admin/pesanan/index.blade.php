@@ -17,10 +17,11 @@
     </div>
 @endif
 
-<div class="flex flex-wrap gap-2">
+{{-- Tab status: bisa digeser menyamping di HP --}}
+<div class="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:overflow-visible md:px-0 md:pb-0">
     @foreach ($labelStatus as $kunci => $nama)
         <a href="{{ route('admin.pesanan', array_merge(request()->except('page', 'status'), ['status' => $kunci !== '' ? $kunci : null])) }}"
-           class="rounded-lg px-3 py-2 font-headline text-xs font-semibold transition
+           class="shrink-0 whitespace-nowrap rounded-lg px-3 py-2 font-headline text-xs font-semibold transition
            {{ $statusAktif === $kunci ? 'bg-primary-container text-on-surface' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
             {{ $nama }} <span class="ml-1 rounded-full bg-black/20 px-2 py-0.5">{{ $jumlah[$kunci] ?? 0 }}</span>
         </a>
@@ -46,7 +47,39 @@
     </div>
 </form>
 
-<div class="card mt-4 overflow-x-auto !p-0">
+{{-- Tampilan HP: daftar kartu --}}
+<div class="mt-4 space-y-3 md:hidden">
+    @forelse ($pesanan as $b)
+        <a href="{{ route('admin.pesanan.show', $b) }}"
+           class="card block !p-4 transition hover:border-cyan-400/40 active:scale-[0.99]">
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="font-headline font-semibold tracking-wider text-secondary">{{ $b->kode_booking }}</p>
+                    <p class="text-xs text-outline">{{ $b->created_at->format('d-m-Y H:i') }}</p>
+                </div>
+                <span class="shrink-0 rounded-full px-3 py-1 font-headline text-[11px] font-semibold uppercase tracking-wider {{ $b->kelasStatus() }}">{{ $b->statusTampil() }}</span>
+            </div>
+
+            <div class="mt-3 border-t border-surface-variant/40 pt-3">
+                <p class="truncate font-semibold">{{ $b->user->name }}</p>
+                <p class="truncate text-xs text-on-surface-variant">{{ $b->user->email }}</p>
+            </div>
+
+            <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                <div><dt class="text-xs text-outline">Unit</dt><dd>{{ $b->console->kode_unit }}</dd></div>
+                <div><dt class="text-xs text-outline">Penerimaan</dt><dd>{{ $b->metode_serah }}</dd></div>
+                <div class="col-span-2"><dt class="text-xs text-outline">Jadwal</dt><dd>{{ $b->waktu_mulai->format('d-m-Y H:i') }} <span class="text-on-surface-variant">({{ $b->durasi_jam }} jam)</span></dd></div>
+            </dl>
+
+            <p class="mt-3 text-right font-headline text-lg font-bold">{{ $rp($b->total_harga) }}</p>
+        </a>
+    @empty
+        <div class="card !p-8 text-center text-sm text-on-surface-variant">Tidak ada pesanan yang cocok dengan filter.</div>
+    @endforelse
+</div>
+
+{{-- Tampilan tablet dan desktop: tabel --}}
+<div class="card mt-4 hidden overflow-x-auto !p-0 md:block">
     <table class="w-full min-w-[820px] text-left text-sm">
         <thead class="border-b border-surface-variant/40 text-xs uppercase tracking-wider text-outline">
             <tr>
