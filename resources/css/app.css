@@ -65,6 +65,18 @@
     to { transform: scaleX(1); }
 }
 
+/* Batang grafik tumbuh dari bawah. */
+@keyframes tumbuh-y {
+    from { transform: scaleY(0); }
+    to { transform: scaleY(1); }
+}
+
+/* Bilah waktu notifikasi menyusut dari penuh ke kosong. */
+@keyframes susut-x {
+    from { transform: scaleX(1); }
+    to { transform: scaleX(0); }
+}
+
 @layer base {
     html { color-scheme: dark; }
     body { @apply bg-surface text-on-surface antialiased; }
@@ -112,6 +124,15 @@
         transform-origin: left;
         animation: tumbuh-x 0.8s ease-out both;
         animation-delay: var(--d, 0ms);
+    }
+    .tumbuh-y {
+        transform-origin: bottom;
+        animation: tumbuh-y 0.6s ease-out both;
+        animation-delay: var(--d, 0ms);
+    }
+    .susut-x {
+        transform-origin: left;
+        animation: susut-x var(--dur, 6000ms) linear both;
     }
 }
 
