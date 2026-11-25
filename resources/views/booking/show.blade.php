@@ -12,18 +12,18 @@
 @endphp
 
 <div class="mx-auto max-w-4xl">
-    <div class="flex flex-wrap items-center justify-between gap-4">
-        <div>
+    <div class="anim-in flex flex-wrap items-center justify-between gap-4">
+        <div class="min-w-0">
             <p class="font-headline text-xs font-semibold uppercase tracking-widest text-outline">Kode Booking</p>
-            <h2 class="font-headline text-3xl font-bold tracking-wider">{{ $booking->kode_booking }}</h2>
+            <h2 class="break-all font-headline text-2xl font-bold tracking-wider sm:text-3xl">{{ $booking->kode_booking }}</h2>
         </div>
         <span class="rounded-full px-4 py-1.5 font-headline text-xs font-semibold uppercase tracking-wider {{ $booking->kelasStatus() }}">{{ $booking->statusTampil() }}</span>
     </div>
 
     @if ($sudahBayar && $booking->kode_konfirmasi)
-        <div class="mt-8 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-6 text-center">
+        <div class="anim-pop mt-8 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-5 text-center sm:p-6" style="--d: 100ms">
             <p class="font-headline text-xs font-semibold uppercase tracking-widest text-emerald-300">Kode Konfirmasi Serah Terima</p>
-            <p class="mt-2 font-headline text-5xl font-bold tracking-[0.3em] text-secondary">{{ $booking->kode_konfirmasi }}</p>
+            <p class="mt-2 break-all font-headline text-3xl font-bold tracking-[0.2em] text-secondary min-[400px]:text-4xl sm:text-5xl sm:tracking-[0.3em]">{{ $booking->kode_konfirmasi }}</p>
             <p class="mt-3 text-sm text-on-surface-variant">
                 Tunjukkan kode ini ke admin saat
                 {{ $booking->metode_serah === 'Diantar' ? 'unit diantar ke alamatmu' : 'mengambil unit di tempat sewa' }}.
@@ -32,17 +32,17 @@
     @endif
 
     <div class="mt-8 grid gap-6 md:grid-cols-5">
-        <div class="card space-y-4 md:col-span-3">
+        <div class="card anim-in space-y-4 !p-5 sm:!p-6 md:col-span-3" style="--d: 140ms">
             <h3 class="font-headline text-lg font-bold">Detail Sewa</h3>
             <dl class="grid gap-4 text-sm sm:grid-cols-2">
-                <div><dt class="text-outline">Unit</dt><dd class="font-semibold">{{ $booking->console->kode_unit }} · {{ $booking->console->nama_tampil }}</dd></div>
+                <div><dt class="text-outline">Unit</dt><dd class="font-semibold">{{ $booking->console->kode_unit }} - {{ $booking->console->nama_tampil }}</dd></div>
                 <div><dt class="text-outline">Durasi</dt><dd class="font-semibold">{{ $booking->durasi_jam }} jam</dd></div>
                 <div><dt class="text-outline">Mulai</dt><dd class="font-semibold">{{ $booking->waktu_mulai->format('d-m-Y H:i') }}</dd></div>
                 <div><dt class="text-outline">Selesai</dt><dd class="font-semibold">{{ $booking->waktu_selesai->format('d-m-Y H:i') }}</dd></div>
                 <div><dt class="text-outline">Cara Penerimaan</dt><dd class="font-semibold">{{ $booking->metode_serah }}</dd></div>
                 <div><dt class="text-outline">Stik Tambahan</dt><dd class="font-semibold">{{ $booking->jumlah_stik }}</dd></div>
                 @if ($booking->alamat_pengiriman)
-                    <div class="sm:col-span-2"><dt class="text-outline">Alamat Pengiriman</dt><dd class="font-semibold">{{ $booking->alamat_pengiriman }}</dd></div>
+                    <div class="sm:col-span-2"><dt class="text-outline">Alamat Pengiriman</dt><dd class="break-words font-semibold">{{ $booking->alamat_pengiriman }}</dd></div>
                 @endif
                 @if ($lunas)
                     <div><dt class="text-outline">Metode Bayar</dt><dd class="font-semibold">{{ $lunas->metode ?? '-' }}</dd></div>
@@ -51,14 +51,14 @@
             </dl>
         </div>
 
-        <div class="card space-y-4 md:col-span-2">
+        <div class="card anim-in space-y-4 !p-5 sm:!p-6 md:col-span-2" style="--d: 220ms">
             <h3 class="font-headline text-lg font-bold">Rincian Biaya</h3>
             <div class="space-y-2 text-sm">
-                <div class="flex justify-between"><span class="text-on-surface-variant">Paket {{ $booking->durasi_jam }} jam</span><span>{{ $rp($booking->harga_paket) }}</span></div>
-                <div class="flex justify-between"><span class="text-on-surface-variant">Stik ({{ $booking->jumlah_stik }} x {{ $rp($booking->harga_stik) }})</span><span>{{ $rp($booking->jumlah_stik * $booking->harga_stik) }}</span></div>
-                <div class="flex justify-between"><span class="text-on-surface-variant">Pengiriman</span><span>{{ $booking->biaya_pengiriman > 0 ? $rp($booking->biaya_pengiriman) : 'Gratis' }}</span></div>
+                <div class="flex justify-between gap-3"><span class="text-on-surface-variant">Paket {{ $booking->durasi_jam }} jam</span><span>{{ $rp($booking->harga_paket) }}</span></div>
+                <div class="flex justify-between gap-3"><span class="text-on-surface-variant">Stik ({{ $booking->jumlah_stik }} x {{ $rp($booking->harga_stik) }})</span><span>{{ $rp($booking->jumlah_stik * $booking->harga_stik) }}</span></div>
+                <div class="flex justify-between gap-3"><span class="text-on-surface-variant">Pengiriman</span><span>{{ $booking->biaya_pengiriman > 0 ? $rp($booking->biaya_pengiriman) : 'Gratis' }}</span></div>
             </div>
-            <div class="flex items-end justify-between border-t border-surface-variant/40 pt-4">
+            <div class="flex items-end justify-between gap-3 border-t border-surface-variant/40 pt-4">
                 <span class="text-on-surface-variant">Total</span>
                 <span class="font-headline text-2xl font-bold text-secondary">{{ $rp($booking->total_harga) }}</span>
             </div>
@@ -70,14 +70,14 @@
             @endif
 
             @if ($bisaBayar)
-                <div class="rounded-lg bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+                <div id="banner-bayar" class="rounded-lg bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
                     Selesaikan pembayaran dalam
                     <span id="hitung-mundur" data-batas="{{ $booking->batas_bayar->toIso8601String() }}" class="font-headline font-bold">--:--</span>
                 </div>
                 <button type="button" id="btn-bayar" class="btn-primary w-full disabled:cursor-wait disabled:opacity-60">
                     <span class="material-symbols-outlined text-[20px]">payments</span> Bayar Sekarang
                 </button>
-                <button type="button" id="btn-cek" class="btn-secondary w-full">Cek Status Pembayaran</button>
+                <button type="button" id="btn-cek" class="btn-secondary w-full disabled:cursor-wait disabled:opacity-60">Cek Status Pembayaran</button>
                 <p id="pesan-bayar" class="hidden rounded-lg bg-surface-container-high px-4 py-3 text-sm"></p>
 
                 @unless (config('midtrans.is_production'))
@@ -101,9 +101,27 @@
     @endif
 
     @if ($riwayat->isNotEmpty())
-        <div class="card mt-6">
+        <div class="card anim-in mt-6 !p-5 sm:!p-6" style="--d: 300ms">
             <h3 class="font-headline text-lg font-bold">Riwayat Pembayaran</h3>
-            <div class="mt-3 overflow-x-auto">
+
+            {{-- HP: daftar kartu --}}
+            <div class="mt-3 space-y-3 md:hidden">
+                @foreach ($riwayat as $p)
+                    <div class="rounded-lg border border-surface-variant/40 bg-surface-container-lowest p-3 text-sm">
+                        <div class="flex items-start justify-between gap-3">
+                            <p class="min-w-0 break-all font-mono text-xs">{{ $p->order_id }}</p>
+                            <span class="shrink-0 text-xs font-semibold">{{ $p->status_pembayaran }}</span>
+                        </div>
+                        <div class="mt-2 flex justify-between gap-3 text-on-surface-variant">
+                            <span>{{ $p->metode ?? '-' }}</span>
+                            <span class="font-semibold text-on-surface">{{ $rp($p->nominal) }}</span>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            {{-- Tablet dan desktop: tabel --}}
+            <div class="mt-3 hidden overflow-x-auto md:block">
                 <table class="w-full text-left text-sm">
                     <thead class="text-xs uppercase tracking-wider text-outline">
                         <tr><th class="py-2 pr-4">Order</th><th class="py-2 pr-4">Metode</th><th class="py-2 pr-4">Nominal</th><th class="py-2">Status</th></tr>
@@ -123,11 +141,11 @@
         </div>
     @endif
 
-    <div class="mt-6 flex flex-wrap gap-4 text-sm">
-        <a href="{{ route('booking.index') }}" class="inline-flex items-center gap-2 text-secondary hover:underline">
+    <div class="mt-6 flex flex-wrap gap-x-6 gap-y-3 text-sm">
+        <a href="{{ route('booking.index') }}" class="inline-flex items-center gap-2 py-1 text-secondary hover:underline">
             <span class="material-symbols-outlined text-[18px]">receipt_long</span> Semua pesanan
         </a>
-        <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 text-secondary hover:underline">
+        <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 py-1 text-secondary hover:underline">
             <span class="material-symbols-outlined text-[18px]">arrow_back</span> Kembali ke dasbor
         </a>
     </div>
@@ -138,10 +156,22 @@
 <script>
 (function () {
     var el = document.getElementById('hitung-mundur');
+    var banner = document.getElementById('banner-bayar');
     var batas = new Date(el.dataset.batas).getTime();
+
+    // Hitung mundur: saat sisa waktu 2 menit atau kurang, banner berubah merah dan berdenyut.
     function tick() {
         var s = Math.floor((batas - Date.now()) / 1000);
-        if (s <= 0) { el.textContent = 'Waktu habis. Muat ulang halaman.'; return; }
+        if (s <= 0) {
+            el.textContent = 'Waktu habis. Muat ulang halaman.';
+            banner.classList.remove('animate-pulse');
+            return;
+        }
+        if (s <= 120 && !banner.dataset.mendesak) {
+            banner.dataset.mendesak = '1';
+            banner.classList.remove('bg-amber-500/10', 'text-amber-300');
+            banner.classList.add('bg-error-container/30', 'text-error', 'animate-pulse');
+        }
         el.textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
         setTimeout(tick, 1000);
     }
@@ -153,9 +183,18 @@
     var csrf = document.querySelector('meta[name="csrf-token"]').content;
     var urlBayar = @json(route('booking.bayar', $booking));
     var urlCek = @json(route('booking.cek-status', $booking));
+    var htmlBayar = tombolBayar.innerHTML;
+    var spinner = '<span class="material-symbols-outlined animate-spin text-[20px]">progress_activity</span> Memproses...';
 
-    function tampil(teks, galat) {
-        pesan.textContent = teks;
+    function tampil(teks, galat, sukses) {
+        pesan.textContent = '';
+        if (sukses) {
+            var ikon = document.createElement('span');
+            ikon.className = 'material-symbols-outlined anim-pop mr-2 align-middle text-[22px] text-emerald-300';
+            ikon.textContent = 'check_circle';
+            pesan.appendChild(ikon);
+        }
+        pesan.appendChild(document.createTextNode(teks));
         pesan.className = 'rounded-lg px-4 py-3 text-sm ' + (galat ? 'bg-error-container/30 text-error' : 'bg-surface-container-high text-on-surface');
     }
 
@@ -167,14 +206,17 @@
     }
 
     async function cek() {
+        tombolCek.disabled = true;
         tampil('Memeriksa status pembayaran...', false);
         try {
             var h = await kirim(urlCek);
             if (!h.ok) { tampil(h.data.message || 'Gagal memeriksa status.', true); return; }
-            tampil(h.data.pesan, false);
-            if (h.data.lunas) { setTimeout(function () { window.location.reload(); }, 900); }
+            tampil(h.data.pesan, false, h.data.lunas);
+            if (h.data.lunas) { setTimeout(function () { window.location.reload(); }, 1400); }
         } catch (e) {
             tampil('Terjadi kesalahan jaringan. Coba lagi.', true);
+        } finally {
+            tombolCek.disabled = false;
         }
     }
 
@@ -184,6 +226,7 @@
             return;
         }
         tombolBayar.disabled = true;
+        tombolBayar.innerHTML = spinner;
         tampil('Menyiapkan pembayaran...', false);
         try {
             var h = await kirim(urlBayar);
@@ -198,6 +241,7 @@
             tampil('Terjadi kesalahan jaringan. Coba lagi.', true);
         } finally {
             tombolBayar.disabled = false;
+            tombolBayar.innerHTML = htmlBayar;
         }
     });
 

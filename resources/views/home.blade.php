@@ -2,45 +2,45 @@
 @section('title', 'Beranda')
 
 @section('content')
-<div class="space-y-20">
+<div class="space-y-12 md:space-y-20">
 
     {{-- ===== HERO ===== --}}
-    <section class="relative overflow-hidden rounded-xl bg-surface-container-lowest p-8 md:p-12">
+    <section class="relative overflow-hidden rounded-xl bg-surface-container-lowest p-6 sm:p-8 md:p-12">
         <div class="pointer-events-none absolute inset-0 opacity-40"
              style="background: radial-gradient(circle at 70% 20%, rgba(47,107,255,.25), transparent 50%), radial-gradient(circle at 20% 80%, rgba(93,230,255,.18), transparent 55%);"></div>
 
-        <div class="relative z-10 grid items-center gap-10 lg:grid-cols-5">
+        <div class="relative z-10 grid items-center gap-8 lg:grid-cols-5 lg:gap-10">
             <div class="lg:col-span-3">
-                <span class="inline-flex items-center gap-2 rounded-full bg-surface-container-high/80 px-4 py-1 font-headline text-xs font-semibold uppercase tracking-widest text-secondary">
+                <span class="anim-in inline-flex items-center gap-2 rounded-full bg-surface-container-high/80 px-4 py-1 font-headline text-xs font-semibold uppercase tracking-widest text-secondary">
                     <span class="h-2 w-2 animate-pulse rounded-full bg-secondary"></span> {{ $badge }}
                 </span>
-                <h2 class="mt-4 font-headline text-4xl font-bold leading-tight tracking-tight md:text-5xl">{{ $judul }}</h2>
+                <h2 class="anim-in mt-4 font-headline text-3xl font-bold leading-tight tracking-tight sm:text-4xl md:text-5xl" style="--d: 80ms">{{ $judul }}</h2>
                 @if ($deskripsi)
-                    <p class="mt-4 max-w-2xl text-lg text-on-surface-variant">{{ $deskripsi }}</p>
+                    <p class="anim-in mt-4 max-w-2xl text-base text-on-surface-variant sm:text-lg" style="--d: 160ms">{{ $deskripsi }}</p>
                 @endif
-                <div class="mt-8 flex flex-wrap gap-3">
-                    <a href="#katalog" class="btn-primary">
+                <div class="anim-in mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap" style="--d: 240ms">
+                    <a href="#katalog" class="btn-primary w-full sm:w-auto">
                         <span class="material-symbols-outlined text-[20px]">sports_esports</span> Lihat Katalog
                     </a>
                     @guest
-                        <a href="{{ route('register') }}" class="btn-secondary">Daftar Gratis</a>
+                        <a href="{{ route('register') }}" class="btn-secondary w-full sm:w-auto">Daftar Gratis</a>
                     @endguest
                 </div>
             </div>
 
-            <div class="grid gap-4 lg:col-span-2">
+            <div class="grid gap-3 sm:gap-4 lg:col-span-2">
                 @foreach ($poin as $i => $p)
-                    <div class="card flex items-start gap-4 !p-5">
-                        <span class="material-symbols-outlined rounded-lg bg-primary-container/20 p-2 text-secondary">
+                    <div class="card anim-in flex items-start gap-4 !p-4 sm:!p-5" style="--d: {{ 200 + $i * 100 }}ms">
+                        <span class="material-symbols-outlined shrink-0 rounded-lg bg-primary-container/20 p-2 text-secondary">
                             {{ ['event_available', 'verified_user', 'bolt'][$i] ?? 'check_circle' }}
                         </span>
-                        <div>
+                        <div class="min-w-0">
                             <p class="font-headline font-semibold">{{ $p['judul'] }}</p>
                             <p class="text-sm text-on-surface-variant">{{ $p['isi'] }}</p>
                         </div>
                     </div>
                 @endforeach
-                <div class="card flex items-center justify-between !p-5">
+                <div class="card anim-in flex items-center justify-between gap-3 !p-4 sm:!p-5" style="--d: {{ 200 + count($poin) * 100 }}ms">
                     <span class="text-sm text-on-surface-variant">Unit tersedia sekarang</span>
                     <span class="font-headline text-2xl font-bold text-secondary">{{ $jumlahTersedia }}<span class="text-base font-medium text-on-surface-variant"> / {{ $unit->count() }}</span></span>
                 </div>
@@ -49,23 +49,23 @@
     </section>
 
     {{-- ===== KATALOG ===== --}}
-    <section id="katalog" class="scroll-mt-28">
-        <div class="flex flex-wrap items-end justify-between gap-4">
+    <section id="katalog" class="scroll-mt-28" x-data="{ tampil: false }" x-intersect.once.threshold.10="tampil = true">
+        <div :class="tampil ? 'anim-in' : 'opacity-0'" class="flex flex-wrap items-end justify-between gap-4">
             <div>
-                <h3 class="font-headline text-3xl font-bold">Katalog Unit</h3>
+                <h3 class="font-headline text-2xl font-bold sm:text-3xl">Katalog Unit</h3>
                 <p class="mt-1 text-on-surface-variant">Pilih konsol yang siap kamu sewa.</p>
             </div>
             <div class="flex gap-2" role="group" aria-label="Filter jenis konsol">
                 @foreach (['semua' => 'Semua', 'PS5' => 'PS5', 'PS4' => 'PS4'] as $nilai => $label)
                     <button type="button" data-filter="{{ $nilai }}" aria-pressed="{{ $loop->first ? 'true' : 'false' }}"
-                            class="rounded-lg px-4 py-2 font-headline text-sm font-semibold transition {{ $loop->first ? 'bg-primary-container text-on-surface' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
+                            class="rounded-lg px-4 py-2 font-headline text-sm font-semibold transition active:scale-95 {{ $loop->first ? 'bg-primary-container text-on-surface' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
                         {{ $label }}
                     </button>
                 @endforeach
             </div>
         </div>
 
-        <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div class="mt-8 grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
             @forelse ($unit as $u)
                 @php
                     $tersedia = $u->status === 'Tersedia';
@@ -79,8 +79,10 @@
                     $paketMulai = $mulai->get($u->jenis);
                 @endphp
                 <article data-unit="{{ $u->jenis }}"
-                         class="flex flex-col overflow-hidden rounded-xl border border-primary-container/15 bg-surface-container-low transition hover:border-cyan-400/40">
-                    <div class="relative aspect-[16/10] bg-surface-container-lowest">
+                         :class="tampil ? 'anim-in' : 'opacity-0'"
+                         style="--d: {{ min(80 + $loop->index * 80, 560) }}ms"
+                         class="group flex flex-col overflow-hidden rounded-xl border border-primary-container/15 bg-surface-container-low transition duration-300 hover:-translate-y-1 hover:border-cyan-400/40 hover:shadow-[0_12px_36px_-12px_rgba(34,211,238,0.3)]">
+                    <div class="relative aspect-[16/10] overflow-hidden bg-surface-container-lowest">
                         <div class="absolute inset-0 flex flex-col items-center justify-center gap-2"
                              style="background: radial-gradient(circle at 70% 20%, rgba(47,107,255,.35), transparent 55%), radial-gradient(circle at 20% 90%, rgba(93,230,255,.2), transparent 60%);">
                             <span class="material-symbols-outlined text-5xl text-secondary">sports_esports</span>
@@ -88,13 +90,13 @@
                         </div>
                         @if ($u->fotoUrl())
                             <img src="{{ $u->fotoUrl() }}" alt="{{ $u->nama_tampil }}" loading="lazy"
-                                 class="absolute inset-0 h-full w-full object-cover" onerror="this.remove()">
+                                 class="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105" onerror="this.remove()">
                         @endif
                         <span class="absolute left-3 top-3 rounded-full bg-surface/80 px-3 py-1 font-headline text-xs font-bold uppercase tracking-wider text-secondary backdrop-blur">{{ $u->jenis }}</span>
                         <span class="absolute right-3 top-3 rounded-full px-3 py-1 font-headline text-xs font-semibold uppercase tracking-wider backdrop-blur {{ $kelasStatus }}">{{ $u->status }}</span>
                     </div>
 
-                    <div class="flex flex-1 flex-col p-5">
+                    <div class="flex flex-1 flex-col p-4 sm:p-5">
                         <p class="font-headline text-xs font-semibold uppercase tracking-widest text-outline">{{ $u->kode_unit }}</p>
                         <h4 class="mt-1 font-headline text-xl font-bold">{{ $u->nama_tampil }}</h4>
                         @if ($u->tag)
@@ -142,20 +144,24 @@
     </section>
 
     {{-- ===== HARGA ===== --}}
-    <section id="harga" class="scroll-mt-28">
-        <h3 class="font-headline text-3xl font-bold">Harga Paket</h3>
-        <p class="mt-1 text-on-surface-variant">Pilih durasi sesuai kebutuhan mainmu.</p>
+    <section id="harga" class="scroll-mt-28" x-data="{ tampil: false }" x-intersect.once.threshold.10="tampil = true">
+        <div :class="tampil ? 'anim-in' : 'opacity-0'">
+            <h3 class="font-headline text-2xl font-bold sm:text-3xl">Harga Paket</h3>
+            <p class="mt-1 text-on-surface-variant">Pilih durasi sesuai kebutuhan mainmu.</p>
+        </div>
 
-        <div class="mt-8 grid gap-6 md:grid-cols-2">
+        <div class="mt-8 grid gap-4 sm:gap-6 md:grid-cols-2">
             @forelse ($paket as $jenis => $daftar)
-                <div class="card">
+                <div :class="tampil ? 'anim-in' : 'opacity-0'"
+                     style="--d: {{ 100 + $loop->index * 100 }}ms"
+                     class="card !p-5 sm:!p-6">
                     <div class="flex items-center gap-3 border-b border-surface-variant/40 pb-4">
                         <span class="material-symbols-outlined text-secondary">sports_esports</span>
                         <h4 class="font-headline text-xl font-bold">{{ $jenis }}</h4>
                     </div>
                     <ul class="divide-y divide-surface-variant/40">
                         @foreach ($daftar as $p)
-                            <li class="flex items-center justify-between py-3">
+                            <li class="flex items-center justify-between gap-3 py-3">
                                 <span class="text-on-surface-variant">{{ $p->durasi_jam }} jam</span>
                                 <span class="font-headline font-semibold text-secondary">{{ $p->hargaRupiah() }}</span>
                             </li>
@@ -168,7 +174,7 @@
         </div>
 
         @if (count($kelengkapan))
-            <div class="mt-6 flex flex-wrap items-center gap-3">
+            <div :class="tampil ? 'anim-in' : 'opacity-0'" style="--d: 300ms" class="mt-6 flex flex-wrap items-center gap-3">
                 <span class="font-headline text-sm font-semibold uppercase tracking-wider text-outline">Sudah termasuk</span>
                 @foreach ($kelengkapan as $item)
                     <span class="rounded-full border border-primary-container/30 px-3 py-1 text-sm">{{ $item }}</span>
@@ -179,11 +185,13 @@
 
     {{-- ===== CARA MENYEWA ===== --}}
     @if (count($langkah))
-        <section id="cara" class="scroll-mt-28">
-            <h3 class="font-headline text-3xl font-bold">Cara Menyewa</h3>
-            <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <section id="cara" class="scroll-mt-28" x-data="{ tampil: false }" x-intersect.once.threshold.10="tampil = true">
+            <h3 :class="tampil ? 'anim-in' : 'opacity-0'" class="font-headline text-2xl font-bold sm:text-3xl">Cara Menyewa</h3>
+            <div class="mt-8 grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
                 @foreach ($langkah as $i => $l)
-                    <div class="card">
+                    <div :class="tampil ? 'anim-in' : 'opacity-0'"
+                         style="--d: {{ 100 + $i * 110 }}ms"
+                         class="card !p-5 transition duration-300 hover:-translate-y-1 hover:border-cyan-400/40 sm:!p-6">
                         <span class="flex h-10 w-10 items-center justify-center rounded-full bg-primary-container font-headline font-bold">{{ $i + 1 }}</span>
                         <h4 class="mt-4 font-headline text-lg font-semibold">{{ $l['judul'] }}</h4>
                         <p class="mt-1 text-sm text-on-surface-variant">{{ $l['isi'] }}</p>
@@ -192,9 +200,9 @@
             </div>
 
             @if ($operasional)
-                <div class="card mt-6 flex items-center gap-4">
-                    <span class="material-symbols-outlined text-3xl text-secondary">schedule</span>
-                    <div>
+                <div :class="tampil ? 'anim-in' : 'opacity-0'" style="--d: 560ms" class="card mt-6 flex items-center gap-4 !p-5 sm:!p-6">
+                    <span class="material-symbols-outlined shrink-0 text-3xl text-secondary">schedule</span>
+                    <div class="min-w-0">
                         <p class="font-headline text-lg font-semibold">{{ $operasional['judul'] }}</p>
                         <p class="text-sm text-on-surface-variant">{{ $operasional['isi'] }}</p>
                     </div>
@@ -220,7 +228,13 @@
                 kartu.forEach(function (k) {
                     var cocok = filter === 'semua' || k.dataset.unit === filter;
                     k.classList.toggle('hidden', !cocok);
-                    if (cocok) { tampil++; }
+                    if (cocok) {
+                        tampil++;
+                        // Ulangi animasi kecil agar pergantian filter terasa hidup.
+                        k.classList.remove('anim-pop');
+                        void k.offsetWidth;
+                        k.classList.add('anim-pop');
+                    }
                 });
                 kosong.classList.toggle('hidden', tampil !== 0);
 

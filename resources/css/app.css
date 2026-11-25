@@ -46,9 +46,31 @@
     to { opacity: 1; transform: none; }
 }
 
+/* Konten halaman muncul pelan dari bawah. */
+@keyframes fade-up {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: none; }
+}
+
+/* Elemen penting (kode konfirmasi, centang) muncul dengan sedikit membesar. */
+@keyframes pop {
+    0% { opacity: 0; transform: scale(0.9); }
+    60% { opacity: 1; transform: scale(1.04); }
+    100% { opacity: 1; transform: none; }
+}
+
+/* Bilah progres tumbuh dari kiri. */
+@keyframes tumbuh-x {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+}
+
 @layer base {
     html { color-scheme: dark; }
     body { @apply bg-surface text-on-surface antialiased; }
+
+    /* Halaman dengan bar tetap di bawah (HP): beri ruang agar footer tidak tertutup. */
+    body:has([data-bar-bawah]) { padding-bottom: 4.75rem; }
 }
 
 @layer components {
@@ -77,6 +99,26 @@
     .menu-item-down {
         animation: menu-item-down 0.3s ease-out both;
         animation-delay: var(--d, 0ms);
+    }
+    .anim-in {
+        animation: fade-up 0.45s ease-out both;
+        animation-delay: var(--d, 0ms);
+    }
+    .anim-pop {
+        animation: pop 0.5s ease-out both;
+        animation-delay: var(--d, 0ms);
+    }
+    .tumbuh-x {
+        transform-origin: left;
+        animation: tumbuh-x 0.8s ease-out both;
+        animation-delay: var(--d, 0ms);
+    }
+}
+
+/* Di HP, huruf isian minimal 16px agar iPhone tidak memperbesar halaman saat isian disentuh. */
+@media (max-width: 767px) {
+    .input-field {
+        font-size: 1rem;
     }
 }
 

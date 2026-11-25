@@ -2,19 +2,19 @@
 @section('title', 'Dasbor')
 
 @section('content')
-<h2 class="font-headline text-3xl font-bold">Halo, {{ auth()->user()->name }} 👋</h2>
-<p class="mt-1 text-on-surface-variant">Dasbor pelanggan. Pembayaran dan riwayat lengkap menyusul di L6.</p>
+<h2 class="anim-in font-headline text-2xl font-bold sm:text-3xl">Halo, {{ auth()->user()->name }} &#128075;</h2>
+<p class="anim-in mt-1 text-on-surface-variant" style="--d: 60ms">Ringkasan akun dan pesanan terbaru kamu.</p>
 
-<div class="mt-8 grid gap-6 md:grid-cols-3">
-    <div class="card">
+<div class="mt-8 grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+    <div class="card anim-in min-w-0 !p-5 sm:!p-6" style="--d: 100ms">
         <p class="label-field">Email</p>
-        <p class="font-headline text-lg">{{ auth()->user()->email }}</p>
+        <p class="break-all font-headline text-lg">{{ auth()->user()->email }}</p>
     </div>
-    <div class="card">
+    <div class="card anim-in min-w-0 !p-5 sm:!p-6" style="--d: 170ms">
         <p class="label-field">Nomor HP</p>
-        <p class="font-headline text-lg">{{ auth()->user()->no_hp ?? '-' }}</p>
+        <p class="break-words font-headline text-lg">{{ auth()->user()->no_hp ?? '-' }}</p>
     </div>
-    <div class="card">
+    <div class="card anim-in min-w-0 !p-5 sm:col-span-2 sm:!p-6 lg:col-span-1" style="--d: 240ms">
         <p class="label-field">Status Akun</p>
         <span class="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 font-headline text-xs font-semibold uppercase tracking-wider text-emerald-300">
             <span class="h-2 w-2 rounded-full bg-emerald-400"></span> {{ auth()->user()->status }}
@@ -22,9 +22,9 @@
     </div>
 </div>
 
-<div class="mt-10 flex items-center justify-between">
-    <h3 class="font-headline text-2xl font-bold">Pesanan Terbaru</h3>
-        <div class="flex flex-wrap gap-3">
+<div class="mt-10 flex flex-wrap items-center justify-between gap-3">
+    <h3 class="font-headline text-xl font-bold sm:text-2xl">Pesanan Terbaru</h3>
+    <div class="flex flex-wrap gap-3">
         <a href="{{ route('booking.index') }}" class="btn-secondary !py-2">Semua Pesanan</a>
         <a href="{{ route('booking.create') }}" class="btn-primary !py-2">Booking Baru</a>
     </div>
@@ -32,27 +32,9 @@
 
 <div class="mt-4 space-y-3">
     @forelse ($pesanan as $b)
-        @php
-            $status = $b->kedaluwarsa() ? 'Kedaluwarsa' : $b->status_booking;
-            $kelas = match ($status) {
-                'Menunggu Pembayaran' => 'bg-amber-500/15 text-amber-300',
-                'Dibayar', 'Sedang Disewa' => 'bg-emerald-500/15 text-emerald-300',
-                'Selesai' => 'bg-primary-container/20 text-primary',
-                default => 'bg-error-container/40 text-error',
-            };
-        @endphp
-        <a href="{{ route('booking.show', $b) }}" class="card flex flex-wrap items-center justify-between gap-4 transition hover:border-cyan-400/40">
-            <div>
-                <p class="font-headline font-semibold tracking-wider">{{ $b->kode_booking }}</p>
-                <p class="text-sm text-on-surface-variant">{{ $b->console->nama_tampil }} · {{ $b->waktu_mulai->format('d-m-Y H:i') }} ({{ $b->durasi_jam }} jam)</p>
-            </div>
-            <div class="flex items-center gap-4">
-                <span class="font-headline font-semibold text-secondary">{{ \App\Models\Booking::rupiah($b->total_harga) }}</span>
-                <span class="rounded-full px-3 py-1 font-headline text-xs font-semibold uppercase tracking-wider {{ $kelas }}">{{ $status }}</span>
-            </div>
-        </a>
+        @include('booking._kartu', ['b' => $b, 'i' => $loop->index])
     @empty
-        <div class="card text-center text-on-surface-variant">Belum ada pesanan. Mulai dengan memilih unit di beranda.</div>
+        <div class="card anim-in text-center text-on-surface-variant">Belum ada pesanan. Mulai dengan memilih unit di beranda.</div>
     @endforelse
 </div>
 @endsection
